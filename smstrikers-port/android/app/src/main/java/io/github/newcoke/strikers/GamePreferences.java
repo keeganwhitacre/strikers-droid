@@ -8,6 +8,8 @@ final class GamePreferences {
 
     // Keep the stored key names so upgrades retain existing settings.
     // Touch controls.
+    static final String TOUCH_ACTION_LABELS = "touch_action_labels";
+    static final String SETTINGS_SHORTCUT = "settings_shortcut";
     static final String TOUCH_LAYOUT = "touch_layout";
     static final String TOUCH_STANDARD = "standard";
     static final String TOUCH_COMPACT = "compact";

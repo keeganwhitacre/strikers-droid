@@ -668,6 +668,9 @@ void remember(const char* address)
 enum Screen
 {
     SCR_HOME,
+#if defined(__ANDROID__)
+    SCR_CONTROLLER_CHECK,
+#endif
     SCR_JOIN,
     SCR_NEARBY,
     SCR_SETTINGS,
@@ -1324,7 +1327,8 @@ void draw_home(const OnlineState& st)
         HOME_CREATE,
         HOME_NEARBY,
         HOME_JOIN,
-        HOME_SETTINGS
+        HOME_SETTINGS,
+        HOME_CONTROLLER_CHECK
     };
     int choice = -1;
     int action = -1;
@@ -1345,6 +1349,15 @@ void draw_home(const OnlineState& st)
     entry("nearby", T_NEARBY, T_NEARBY_SUB, HOME_NEARBY);
     entry("join", T_JOIN_ADDRESS, T_JOIN_ADDRESS_SUB, HOME_JOIN);
     entry("settings", T_SETTINGS, T_SETTINGS_SUB, HOME_SETTINGS);
+
+#if defined(__ANDROID__)
+    if (row("controller-check", "Controller check"))
+    {
+        choice = item;
+        action = HOME_CONTROLLER_CHECK;
+    }
+    remembered(item++);
+#endif
 
     if (s_recentCount > 0)
     {
@@ -1384,11 +1397,32 @@ void draw_home(const OnlineState& st)
         s_focusText = !s_lastInputPad;
         break;
     case HOME_SETTINGS: s_idleScreen = SCR_SETTINGS; break;
+#if defined(__ANDROID__)
+    case HOME_CONTROLLER_CHECK: s_idleScreen = SCR_CONTROLLER_CHECK; break;
+#endif
     default:            break;
     }
     if (back_pressed())
         set_open(false);
 }
+
+#if defined(__ANDROID__)
+void draw_controller_check()
+{
+    begin_screen("##online.controllers", "Controller check", nullptr);
+    for (u32 port = 0; port < PAD_CHANMAX; ++port)
+    {
+        const char* name = s_dev[port].present ? PADGetName(port) : nullptr;
+        ImGui::TextColored(s_dev[port].held ? kGold : kText,
+                           "P%u  %s", port + 1, name != nullptr ? name : "—");
+    }
+    const bool done = row("done", text(T_DONE));
+    const Hint hints[] = { { PAD_BUTTON_B, T_HINT_BACK } };
+    end_screen(hints, 1);
+    if (done || back_pressed())
+        s_idleScreen = SCR_HOME;
+}
+#endif
 
 // By address, typed or on a wheel the pad edits.
 void draw_join(const OnlineState&)
@@ -1428,7 +1462,16 @@ void draw_join(const OnlineState&)
         s_focusText = true;
     }
 #endif
-#if defined(PANEL_HAS_CLIPBOARD)
+#if defined(__ANDROID__) && defined(PANEL_HAS_CLIPBOARD)
+    ImGui::SameLine();
+    const bool pasted = ImGui::Button(text(T_PASTE), ImVec2(bw, 0.0f))
+                     || pad_pressed(PAD_BUTTON_Y);
+    if (pasted)
+    {
+        paste_into(w, maxLen);
+        join = false;
+    }
+#elif defined(PANEL_HAS_CLIPBOARD)
     if (!wheel)
     {
         ImGui::SameLine();
@@ -1438,12 +1481,23 @@ void draw_join(const OnlineState&)
 #endif
     ImGui::PopStyleVar();
 
+#if defined(__ANDROID__) && defined(PANEL_HAS_CLIPBOARD)
+    const Text secondary = T_PASTE;
+    const bool showSecondary = true;
+#else
+    const Text secondary = T_HINT_KEYBOARD;
+    const bool showSecondary = PANEL_HAS_TYPING != 0;
+#endif
     const Hint hints[] = { { kDpad, T_HINT_MOVE },          { PAD_BUTTON_A, T_HINT_JOIN },
                            { PAD_BUTTON_X, T_HINT_DELETE }, { PAD_BUTTON_B, T_HINT_BACK },
-                           { kPeek, T_HINT_SHOW },          { PAD_BUTTON_Y, T_HINT_KEYBOARD } };
-    end_screen(hints, PANEL_HAS_TYPING ? 6 : 5, s_showAddresses ? kPeek : 0u);
+                           { kPeek, T_HINT_SHOW },          { PAD_BUTTON_Y, secondary } };
+    end_screen(hints, showSecondary ? 6 : 5, s_showAddresses ? kPeek : 0u);
 
+#if defined(__ANDROID__) && defined(PANEL_HAS_CLIPBOARD)
+    if (!pasted && pad_pressed(PAD_BUTTON_A))
+#else
     if (pad_pressed(PAD_BUTTON_A))
+#endif
         join = true;
     if (PANEL_HAS_TYPING && pad_pressed(PAD_BUTTON_Y))
     {
@@ -2790,6 +2844,9 @@ void draw_panel(const OnlineState& st)
     switch (screen_for(st))
     {
     case SCR_HOME:       draw_home(st); break;
+#if defined(__ANDROID__)
+    case SCR_CONTROLLER_CHECK: draw_controller_check(); break;
+#endif
     case SCR_JOIN:       draw_join(st); break;
     case SCR_NEARBY:     draw_nearby(st); break;
     case SCR_SETTINGS:   draw_settings(st); break;

@@ -31,6 +31,8 @@ extern "C" void PortDebugFrame(void);   // PORT: defined in Game.cpp
 #include "port/benchmark.h"
 #if defined(__ANDROID__)
 void PortAndroidPublishFrameMetrics();
+void PortAndroidSetTouchMatchActive(bool active);
+#include "port/online_panel.h"
 #endif
 #include "port/lockstep.h"
 #include "port/online.h"
@@ -1026,6 +1028,10 @@ int main(int argc, char* argv[])
         PortBenchFrameEnd();
 #if defined(__ANDROID__)
         PortAndroidPublishFrameMetrics();
+        auto* info = nlSingleton<GameInfoManager>::Instance();
+        PortAndroidSetTouchMatchActive(g_pGame != nullptr && info != nullptr
+            && !info->IsInDemoMode() && !FrontEnd::m_bInPauseMenuState
+            && !PortOnlinePanelOpen());
 #endif
         s_portFrame++;
 

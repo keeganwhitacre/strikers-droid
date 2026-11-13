@@ -18,6 +18,12 @@
 #include "NL/nlString.h"
 #include "NL/gl/glStruct.h"
 
+#if defined(__ANDROID__) && defined(PORT_USE_AURORA)
+#include "port/online.h"
+#include "port/online_panel.h"
+bool PortAndroidLocalControllers(bool& swapped);
+#endif
+
 extern bool g_e3_Build;
 
 /**
@@ -744,6 +750,18 @@ void SHChooseSides2::Update(float fDeltaT)
         else
         {
             m_pTicker->Update(fDeltaT);
+#if defined(__ANDROID__) && defined(PORT_USE_AURORA)
+            if (mContext != PAUSE && !PortOnlineActive() && !PortOnlinePanelOpen())
+            {
+                bool swapped = false;
+                if (PortAndroidLocalControllers(swapped))
+                {
+                    if (swapped)
+                        mChooseSide.ResetAndPositionControllers(true);
+                    return;
+                }
+            }
+#endif
             UpdateChooseSideComponent(fDeltaT);
         }
     }

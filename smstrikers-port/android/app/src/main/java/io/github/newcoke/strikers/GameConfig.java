@@ -24,26 +24,32 @@ final class GameConfig {
     private GameConfig() {}
 
     static String readSetting(Context context, String key, String fallback) {
+        return readSettings(context).getOrDefault(key, fallback);
+    }
+
+    static Map<String, String> readSettings(Context context) {
+        Map<String, String> settings = new LinkedHashMap<>();
         AtomicFile file = new AtomicFile(configFile(context));
         try (BufferedReader reader = new BufferedReader(
                 new InputStreamReader(file.openRead(), StandardCharsets.UTF_8))) {
             for (String line; (line = reader.readLine()) != null; ) {
                 String trimmed = line.trim();
                 if (trimmed.startsWith("#") || trimmed.startsWith(";")) continue;
-                if (!key.equals(keyOnLine(trimmed))) continue;
+                String key = keyOnLine(trimmed);
+                if (key == null) continue;
                 String value = trimmed.substring(trimmed.indexOf('=') + 1).trim();
                 if (value.length() >= 2 && (value.startsWith("\"") && value.endsWith("\"")
                         || value.startsWith("'") && value.endsWith("'"))) {
                     value = value.substring(1, value.length() - 1);
                 }
-                return value;
+                settings.putIfAbsent(key, value);
             }
         } catch (java.io.FileNotFoundException ignored) {
-            return fallback;
+            // A fresh install may not have a config yet.
         } catch (IOException e) {
-            Log.w(TAG, "Could not read game setting " + key, e);
+            Log.w(TAG, "Could not read game settings", e);
         }
-        return fallback;
+        return settings;
     }
 
     static boolean writeSetting(Context context, String key, String value) {
