@@ -7,8 +7,8 @@ struct PortCouchResult
     int awayTeam;
     int homeScore;
     int awayScore;
-    unsigned homePlayers = 0;
-    unsigned awayPlayers = 0;
+    unsigned homePlayers;
+    unsigned awayPlayers;
 };
 
 void PortCouchBeginMatch(const short (&sides)[4]);
