@@ -14,6 +14,7 @@
 #include "pipe.h"
 #include "strikers_version.h"
 
+#include <algorithm>
 #include <cmath>
 #include <cstdarg>
 #include <cstdio>
@@ -1331,6 +1332,8 @@ int s_rival[2];
 int s_rivalWins, s_rivalLosses;
 bool s_couchSaveFailed;
 bool s_couchDuplicateName;
+bool s_couchNightOpen;
+unsigned s_couchTonight;
 
 const char* couch_name(int id)
 {
@@ -1444,6 +1447,7 @@ void draw_home(const OnlineState& st)
         s_couchResultCount = PortCouchRecentResults(s_couchResults, 8);
         PortCouchLoadRoster(s_couchRoster);
         s_couchEditing = -1;
+        s_couchNightOpen = false;
         s_couchSaveFailed = false;
         s_rival[0] = next_couch_player(0, 1);
         s_rival[1] = next_couch_player(s_rival[0], 1, s_rival[0]);
@@ -1495,11 +1499,172 @@ void draw_couch_name()
     }
 }
 
+void couch_player_names(unsigned players, char* label, size_t capacity)
+{
+    label[0] = '\0';
+    for (int i = 0; i < kCouchRosterSize; ++i)
+    {
+        if (!(players & (1u << i)))
+            continue;
+        const size_t used = std::strlen(label);
+        std::snprintf(label + used, capacity - used, "%s%s", used ? " + " : "",
+                      couch_name(i + 1));
+    }
+    if (!label[0])
+        std::snprintf(label, capacity, "Guest");
+}
+
+void draw_couch_standings(unsigned players, const PortCouchStanding* standings)
+{
+    int order[kCouchRosterSize];
+    int count = 0;
+    for (int i = 0; i < kCouchRosterSize; ++i)
+        if (players & (1u << i))
+            order[count++] = i;
+    std::stable_sort(order, order + count, [&](int a, int b) {
+        const auto& x = standings[a];
+        const auto& y = standings[b];
+        if (x.wins != y.wins) return x.wins > y.wins;
+        return x.goalsFor - x.goalsAgainst > y.goalsFor - y.goalsAgainst;
+    });
+    for (int i = 0; i < count; ++i)
+    {
+        const int player = order[i];
+        const auto& stats = standings[player];
+        ImGui::TextWrapped("%s   %d W / %d L   %d GF / %d GA", couch_name(player + 1),
+                           stats.wins, stats.losses, stats.goalsFor, stats.goalsAgainst);
+    }
+}
+
+void draw_couch_night()
+{
+    const auto& night = PortCouchGetNight();
+    begin_screen("##couch.night", "Couch Night", nullptr, false, 38.0f);
+    int selected = 0;
+    for (int i = 0; i < kCouchRosterSize; ++i)
+        selected += (s_couchTonight & (1u << i)) != 0;
+    if (!night.active)
+    {
+        section("Who's playing?");
+        for (int i = 0; i < kCouchRosterSize; ++i)
+        {
+            if (!s_couchRoster.names[i][0]) continue;
+            ImGui::PushID(i);
+            const unsigned player = 1u << i;
+            if (row("attending", couch_name(i + 1), s_couchTonight & player ? "In" : "Out"))
+                s_couchTonight ^= player;
+            ImGui::PopID();
+        }
+        muted_text("Pick at least two players. Add nicknames in the Scorebook.");
+        if (row("start", "Start night", nullptr, selected >= 2))
+            PortCouchStartNight(s_couchTonight);
+    }
+    else
+    {
+        if (night.mode == PortCouchMode::Series)
+            section(night.winsNeeded == 2 ? "Best of three" : "Best of five");
+        else if (night.mode == PortCouchMode::Rotation)
+            section("Winner stays on");
+        section("Tonight's standings");
+        draw_couch_standings(night.players, night.standings);
+        if (night.recentCount)
+        {
+            section("Latest scores");
+            for (int i = 0; i < night.recentCount; ++i)
+            {
+                const auto& match = night.recent[i];
+                char home[80], away[80];
+                couch_player_names(match.homePlayers, home, sizeof home);
+                couch_player_names(match.awayPlayers, away, sizeof away);
+                ImGui::TextWrapped("%s   %d - %d   %s", home, match.homeScore, match.awayScore, away);
+            }
+        }
+
+        section("Match format");
+        if (night.mode == PortCouchMode::Series)
+        {
+            if (!night.lineup[0])
+                muted_text("The next recorded match sets the teams. Use Rematch to keep them.");
+            else
+            {
+                char first[80], second[80];
+                couch_player_names(night.lineup[0], first, sizeof first);
+                couch_player_names(night.lineup[1], second, sizeof second);
+                ImGui::TextWrapped("%s   %d - %d   %s", first, night.seriesWins[0],
+                                   night.seriesWins[1], second);
+                if (night.seriesWins[0] == night.winsNeeded ||
+                    night.seriesWins[1] == night.winsNeeded)
+                    ImGui::TextWrapped("%s wins the series", night.seriesWins[0] == night.winsNeeded
+                                       ? first : second);
+            }
+        }
+        if (night.mode == PortCouchMode::Cup)
+        {
+            ImGui::Text("Couch Cup   %d / %d matches", night.cupPlayed, selected * (selected - 1) / 2);
+            draw_couch_standings(night.players, night.cup);
+            if (!night.lineup[0]) muted_text("Cup complete. Standings are sorted by wins, then goal difference.");
+        }
+        if (night.lineup[0] && night.mode != PortCouchMode::Series)
+        {
+            char first[80], second[80];
+            couch_player_names(night.lineup[0], first, sizeof first);
+            couch_player_names(night.lineup[1], second, sizeof second);
+            section("Next lineup");
+            ImGui::TextWrapped("%s vs %s", first, second);
+            if (night.waiting)
+            {
+                char waiting[80];
+                couch_player_names(night.waiting, waiting, sizeof waiting);
+                ImGui::Text("Sitting out   %s", waiting);
+            }
+            const bool cup = night.mode == PortCouchMode::Cup;
+            muted_text(cup ? "P1 vs P2 on Choose Sides." : "P1 + P2 vs P3 + P4 on Choose Sides.");
+            if (row("apply", "Assign lineup to ports"))
+            {
+                auto next = s_couchRoster;
+                int port = 0;
+                for (unsigned team : night.lineup)
+                    for (int i = 0; i < kCouchRosterSize; ++i)
+                        if (team & (1u << i)) next.ports[port++] = i + 1;
+                while (port < 4) next.ports[port++] = 0;
+                save_couch_roster(next);
+            }
+        }
+        if (night.mode == PortCouchMode::OpenPlay)
+        {
+            if (selected == 4 || selected == 5)
+            {
+                if (row("shuffle", "Shuffle 2v2 teams")) PortCouchDrawTeams(false);
+                if (row("balanced", "Draw balanced 2v2 teams")) PortCouchDrawTeams(true);
+                if (row("cup", "Start Couch Cup", "Play each opponent once"))
+                    PortCouchStartMode(PortCouchMode::Cup);
+            }
+            if (selected == 5 && row("rotation", "Winner stays on", "Rotate one player after each 2v2"))
+                PortCouchStartMode(PortCouchMode::Rotation);
+            if (row("best3", "Start best-of-three")) PortCouchStartMode(PortCouchMode::Series, 2);
+            if (row("best5", "Start best-of-five")) PortCouchStartMode(PortCouchMode::Series, 3);
+        }
+        else if (row("free-play", "Return to open play"))
+            PortCouchStartMode(PortCouchMode::OpenPlay);
+        if (row("end", "End night", "Lifetime results are kept")) PortCouchEndNight();
+        if (s_couchSaveFailed) muted_text("Could not save lineup.");
+    }
+    const bool done = row("back", text(T_HINT_BACK));
+    const Hint hints[] = {{ PAD_BUTTON_B, T_HINT_BACK }};
+    end_screen(hints, 1);
+    if (done || back_pressed()) s_couchNightOpen = false;
+}
+
 void draw_couch_scorebook()
 {
     if (s_couchEditing >= 0)
     {
         draw_couch_name();
+        return;
+    }
+    if (s_couchNightOpen)
+    {
+        draw_couch_night();
         return;
     }
     static const char* const teams[] = {
@@ -1509,21 +1674,12 @@ void draw_couch_scorebook()
         return id >= 0 && id < (int)(sizeof teams / sizeof teams[0]) ? teams[id] : "?";
     };
 
-    auto player_names = [](unsigned players, char* label, size_t capacity) {
-        label[0] = '\0';
-        for (int i = 0; i < kCouchRosterSize; ++i)
-        {
-            if (!(players & (1u << i)))
-                continue;
-            const size_t used = std::strlen(label);
-            std::snprintf(label + used, capacity - used, "%s%s", used ? " + " : "",
-                          couch_name(i + 1));
-        }
-        if (!label[0])
-            std::snprintf(label, capacity, "Guest");
-    };
-
     begin_screen("##couch.scorebook", "Couch Scorebook", nullptr, false, 40.0f);
+    if (row("night", "Couch Night", "Standings, lineups, series and cup"))
+    {
+        s_couchTonight = PortCouchGetNight().players;
+        s_couchNightOpen = true;
+    }
     section("Next match");
     for (int port = 0; port < 4; ++port)
     {
@@ -1587,8 +1743,8 @@ void draw_couch_scorebook()
         {
             char home[kCouchRosterSize * (kCouchNameLength + 3) + 1];
             char away[sizeof home];
-            player_names(match.homePlayers, home, sizeof home);
-            player_names(match.awayPlayers, away, sizeof away);
+            couch_player_names(match.homePlayers, home, sizeof home);
+            couch_player_names(match.awayPlayers, away, sizeof away);
             ImGui::TextWrapped("%s vs %s", home, away);
         }
     }

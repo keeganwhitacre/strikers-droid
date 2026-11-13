@@ -150,3 +150,26 @@ assigning a nickname.
 The scorebook records completed local Friendlies with human players on both
 sides. **Head-to-head** counts wins and losses only when the selected players
 were on opposing sides. Results stay on the device.
+
+### Couch Night
+
+In **Couch Scorebook → Couch Night**, select who's playing and start a night.
+Completed local Friendlies with a nickname assigned to every player count
+toward the night's standings when all participants are on the selected roster.
+
+- **Shuffle** draws two pairs from four or five players. The balanced draw
+  pairs players using their lifetime win rates. With five players, one sits out.
+- **Winner stays on** keeps the winning pair together and rotates the waiting
+  player in for someone from the losing pair.
+- **Best-of-three** and **best-of-five** lock in the players from the first
+  qualifying match. Use the game's Rematch option to keep the same teams.
+- **Couch Cup** schedules each pair of entrants for one 1v1. Standings rank
+  players by wins, then goal difference.
+
+For a drawn lineup, use **Assign lineup to ports**, then return to the game and
+use the suggested sides on **Choose Sides**. The app tracks results from the
+players who actually took the field. A different matchup still counts toward
+the night's standings, but it won't advance a rotation, series, or cup fixture.
+
+Couch Night stays active while the game is running. Lifetime results and the
+nickname roster are saved across restarts.

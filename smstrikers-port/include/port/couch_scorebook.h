@@ -26,4 +26,38 @@ void PortCouchLoadRoster(PortCouchRoster& roster);
 bool PortCouchSaveRoster(const PortCouchRoster& roster);
 void PortCouchRivalry(int first, int second, int& wins, int& losses);
 
+struct PortCouchStanding
+{
+    int wins = 0;
+    int losses = 0;
+    int goalsFor = 0;
+    int goalsAgainst = 0;
+};
+
+enum class PortCouchMode { OpenPlay, Rotation, Series, Cup };
+
+struct PortCouchNight
+{
+    bool active = false;
+    unsigned players = 0;
+    PortCouchStanding standings[kCouchRosterSize];
+    PortCouchResult recent[5];
+    int recentCount = 0;
+
+    PortCouchMode mode = PortCouchMode::OpenPlay;
+    unsigned lineup[2]{};
+    unsigned waiting = 0;
+    int sits[kCouchRosterSize]{};
+    int winsNeeded = 0;
+    int seriesWins[2]{};
+    PortCouchStanding cup[kCouchRosterSize];
+    int cupPlayed = 0;
+};
+
+const PortCouchNight& PortCouchGetNight();
+void PortCouchStartNight(unsigned players);
+void PortCouchEndNight();
+bool PortCouchDrawTeams(bool balanced);
+bool PortCouchStartMode(PortCouchMode mode, int winsNeeded = 0);
+
 #endif
