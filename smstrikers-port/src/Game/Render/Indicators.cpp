@@ -22,7 +22,6 @@
 
 #if defined(__ANDROID__) && defined(PORT_USE_AURORA)
 #include "Game/FE/feManager.h"
-#include "Game/Team.h"
 #include "port/online_panel.h"
 
 #include <algorithm>
@@ -78,39 +77,6 @@ void DrawPlayerBadge(cPlayer* player, float x, float y, float opacity)
     DrawHUDBadge(center, label, IM_COL32(255, 206, 94, 255), opacity);
 }
 
-const char* ItemName(ePowerUpType item)
-{
-    switch (item)
-    {
-    case POWER_UP_GREEN_SHELL: return "Green Shell";
-    case POWER_UP_RED_SHELL: return "Red Shell";
-    case POWER_UP_SPINY_SHELL: return "Spiny Shell";
-    case POWER_UP_FREEZE_SHELL: return "Freeze Shell";
-    case POWER_UP_BANANA: return "Banana";
-    case POWER_UP_BOBOMB: return "Bob-omb";
-    case POWER_UP_CHAIN_CHOMP: return "Chain Chomp";
-    case POWER_UP_MUSHROOM: return "Mushroom";
-    case POWER_UP_STAR: return "Star";
-    default: return "";
-    }
-}
-
-void DrawItemBadges()
-{
-    const ImVec2 display = ImGui::GetIO().DisplaySize;
-    for (int side = 0; side < 2; ++side)
-    {
-        const cTeam& team = *g_pTeams[side];
-        const PowerUpTeamType item = team.GetCurrentPowerUp();
-        if (item.eType == POWER_UP_NONE)
-            continue;
-        char label[64];
-        std::snprintf(label, sizeof label, "%s  %s x%d", side == HOME ? "HOME" : "AWAY",
-                      ItemName(item.eType), item.nnumOfPowerups);
-        DrawHUDBadge(ImVec2(display.x * (side == HOME ? 0.25f : 0.75f), display.y * 0.16f),
-                     label, IM_COL32(255, 206, 94, 255));
-    }
-}
 } // namespace
 #endif
 
@@ -319,8 +285,12 @@ static inline void DrawOffscreenIndicator(const nlVector3& v3NormalizedScreenPos
     scale = (float)fabs(1.0f - max_float((float)fabs(v3NormalizedScreenPos.y), (float)fabs(v3NormalizedScreenPos.x)));
     scale = InterpolateRangeClamped(1.0f, 0.5f, 0.0f, 2.0f, scale);
 #if defined(__ANDROID__) && defined(PORT_USE_AURORA)
-    if (ClearMatchHUD() && pInfo->m_fOpacity >= 0.5f)
-        DrawPlayerBadge(pCharacter, screenPosX, screenPosY + 20.0f, pInfo->m_fOpacity);
+    if (ClearMatchHUD())
+    {
+        if (pInfo->m_fOpacity >= 0.5f)
+            DrawPlayerBadge(pCharacter, screenPosX, screenPosY, pInfo->m_fOpacity);
+        return;
+    }
 #endif
     DrawIndicator((int)screenPosX, (int)screenPosY, 64.0f * scale, 64.0f * scale, pInfo->m_fOpacity, GetCharacterTexID(pCharacter), 0.0f, 1);
 }
@@ -432,12 +402,6 @@ static void UpdateAndRenderPlayerIndicators(float)
 
         // PORT: cPlayerIndicatorState was a stand-in reading cPlayer at console 0x19C and 0x1C8.
         cPlayer* pIndicatorPlayer = (cPlayer*)g_pCharacters[i];
-#if defined(__ANDROID__) && defined(PORT_USE_AURORA)
-        if (ClearMatchHUD() && fOpacity > 0.5f && fX >= 0.0f &&
-            fX <= glGetOrthographicWidth() && fY >= 0.0f && fY <= glGetOrthographicHeight())
-            DrawPlayerBadge(pIndicatorPlayer, fX, fY + 18.0f, fOpacity);
-#endif
-
         if (pIndicatorPlayer->m_UserControlledTime < 0.5f)
         {
             switchScale = (0.5f - pIndicatorPlayer->m_UserControlledTime) / 0.5f;
@@ -446,7 +410,6 @@ static void UpdateAndRenderPlayerIndicators(float)
             DrawIndicator((int)fX, (int)fY, s_fAdditiveTextureScale * (s_fOverheadSize * sizeScale), s_fAdditiveTextureScale * (s_fOverheadSize * sizeScale), s_fAdditiveBlendingIntensity * switchScale, glowTexID, 0.0f, 2);
 
             fDistInPixels = s_fOverheadSize * sizeScale;
-            DrawIndicator((int)fX, (int)fY, fDistInPixels, fDistInPixels, fOpacity, indicatorTexID, 0.0f, 1);
         }
         else if (pIndicatorPlayer->m_pBall)
         {
@@ -459,13 +422,21 @@ static void UpdateAndRenderPlayerIndicators(float)
 
             DrawIndicator((int)fX, (int)fY, s_fOverheadSize * s_fAdditiveTextureScale, s_fOverheadSize * s_fAdditiveTextureScale, s_fAdditiveBlendingIntensity * (s_bPulseGlowTexture ? s_fGlowIntensityScale : 1.0f), glowTexID, 0.0f, 2);
             fDistInPixels = s_fOverheadSize;
-            DrawIndicator((int)fX, (int)fY, fDistInPixels, fDistInPixels, fOpacity, indicatorTexID, 0.0f, 1);
         }
         else
         {
             fDistInPixels = s_fOverheadSize;
-            DrawIndicator((int)fX, (int)fY, fDistInPixels, fDistInPixels, fOpacity, indicatorTexID, 0.0f, 1);
         }
+#if defined(__ANDROID__) && defined(PORT_USE_AURORA)
+        if (ClearMatchHUD())
+        {
+            if (fOpacity > 0.5f && fX >= 0.0f && fX <= glGetOrthographicWidth() &&
+                fY >= 0.0f && fY <= glGetOrthographicHeight())
+                DrawPlayerBadge(pIndicatorPlayer, fX, fY, fOpacity);
+            continue;
+        }
+#endif
+        DrawIndicator((int)fX, (int)fY, fDistInPixels, fDistInPixels, fOpacity, indicatorTexID, 0.0f, 1);
     }
 
     whoHadBall = whoHasBall;
@@ -478,10 +449,6 @@ void UpdateAndRenderIndicators(float dt)
 {
     UpdateAndRenderOffScreenIndicators(dt);
     UpdateAndRenderPlayerIndicators(dt);
-#if defined(__ANDROID__) && defined(PORT_USE_AURORA)
-    if (ClearMatchHUD())
-        DrawItemBadges();
-#endif
 
     if (s_bPulseGlowTexture)
     {

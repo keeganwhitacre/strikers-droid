@@ -178,5 +178,5 @@ nickname roster are saved across restarts.
 
 On the `hud-clarity` branch, turn on **Settings → Video → Clearer match HUD**
 and restart the game. During active play, high-contrast P1–P4 badges follow
-controlled players, including their off-screen markers. Labels under the
-scoreboard show each team's ready item and count. The switch defaults to off.
+controlled players and replace their original numbers during active play,
+including at the screen edge. The switch defaults to off.

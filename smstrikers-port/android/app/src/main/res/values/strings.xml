@@ -64,7 +64,7 @@
     <string name="unlock_all">Unlock everything</string>
     <string name="unlock_all_help">Every stadium, team and cup.</string>
     <string name="clear_match_hud">Clearer match HUD</string>
-    <string name="clear_match_hud_help">Show high-contrast player numbers and label each team’s ready item. Applies next game launch.</string>
+    <string name="clear_match_hud_help">Use one high-contrast number per controlled player. Applies next game launch.</string>
     <string name="hud">Performance panel</string>
     <string name="hud_help">FPS, frame cost, GPU, RAM and temperature, at the top of the screen.</string>
     <string name="game_note">Unlock everything is read when the game opens. The panel takes effect immediately.</string>
