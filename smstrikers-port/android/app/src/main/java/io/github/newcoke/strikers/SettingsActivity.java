@@ -81,6 +81,8 @@ public class SettingsActivity extends NativeSettingsActivity {
         });
         row(group, R.string.touch_edit_positions, R.string.touch_edit_positions_help,
                 () -> startActivity(new Intent(this, TouchLayoutActivity.class)));
+        toggle(group, R.string.touch_action_labels, R.string.touch_action_labels_help,
+                GamePreferences.TOUCH_ACTION_LABELS, false);
         slider(group, R.string.opacity, GamePreferences.TOUCH_OPACITY, 25, 100);
         slider(group, R.string.size, GamePreferences.TOUCH_SIZE, 75, 130);
         slider(group, R.string.deadzone, GamePreferences.TOUCH_DEADZONE, 0, 35);
@@ -90,6 +92,13 @@ public class SettingsActivity extends NativeSettingsActivity {
     }
 
     private void controller(PreferenceGroup group) {
+        ListPreference shortcut = list(group, getText(R.string.settings_shortcut),
+                new String[]{"Guide", "Guide / L3", "Guide / R3"},
+                new String[]{"", "l3", "r3"}, prefs.getString(GamePreferences.SETTINGS_SHORTCUT));
+        shortcut.setOnPreferenceChangeListener((item, value) -> {
+            prefs.setString(GamePreferences.SETTINGS_SHORTCUT, value.toString());
+            return true;
+        });
         row(group, getText(R.string.controller_bindings),
                 getText(R.string.controller_bindings_help), null);
         choice(group, R.string.controller_swap_sticks, "pad_swap_sticks",

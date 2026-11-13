@@ -9,6 +9,8 @@
 #include <cstdlib>
 
 #include <jni.h>
+#include <mutex>
+#include <dolphin/pad.h>
 
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_gamepad.h>
@@ -79,6 +81,73 @@ bool real_gamepad_connected()
     return found;
 }
 
+// Indices 0–13 match the virtual button bits, followed by triggers and sticks.
+constexpr SDL_GamepadButton kButtons[] = {
+    SDL_GAMEPAD_BUTTON_SOUTH, SDL_GAMEPAD_BUTTON_EAST, SDL_GAMEPAD_BUTTON_WEST,
+    SDL_GAMEPAD_BUTTON_NORTH, SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER, SDL_GAMEPAD_BUTTON_START,
+    SDL_GAMEPAD_BUTTON_DPAD_UP, SDL_GAMEPAD_BUTTON_DPAD_DOWN, SDL_GAMEPAD_BUTTON_DPAD_LEFT,
+    SDL_GAMEPAD_BUTTON_DPAD_RIGHT, SDL_GAMEPAD_BUTTON_LEFT_SHOULDER,
+    SDL_GAMEPAD_BUTTON_LEFT_STICK, SDL_GAMEPAD_BUTTON_RIGHT_STICK, SDL_GAMEPAD_BUTTON_BACK,
+};
+constexpr int kBindingCount = 18;
+std::mutex s_bindingMutex;
+jint s_bindings[kBindingCount]{-1};
+std::atomic<bool> s_bindingsRequested{false};
+
+void publish_bindings()
+{
+    if (!s_bindingsRequested.exchange(false, std::memory_order_relaxed))
+        return;
+    jint bindings[kBindingCount]{};
+    bool found = false;
+    for (u32 port = 0; port < PAD_CHANMAX; ++port)
+    {
+        const s32 index = PADGetIndexForPort(port);
+        SDL_Gamepad* pad = index < 0 ? nullptr : PADGetSDLGamepadForIndex((u32)index);
+        if (pad == nullptr || SDL_GetGamepadID(pad) != s_virtualId)
+            continue;
+
+        u32 count = 0;
+        const PADButtonMapping* buttons = PADGetButtonMappings(port, &count);
+        if (buttons == nullptr)
+            break;
+        found = true;
+        for (u32 i = 0; i < count; ++i)
+            for (unsigned n = 0; n < sizeof kButtons / sizeof kButtons[0]; ++n)
+                if (buttons[i].nativeButton == (u32)kButtons[n])
+                    bindings[n] |= buttons[i].padButton;
+
+        count = 0;
+        if (const PADAxisMapping* axes = PADGetAxisMappings(port, &count))
+            for (u32 i = 0; i < count; ++i)
+            {
+                const auto& axis = axes[i];
+                const auto source = axis.nativeAxis.nativeAxis;
+                if (axis.padAxis == PAD_AXIS_TRIGGER_L || axis.padAxis == PAD_AXIS_TRIGGER_R)
+                {
+                    const int bit = axis.padAxis == PAD_AXIS_TRIGGER_L ? PAD_TRIGGER_L : PAD_TRIGGER_R;
+                    if (source == SDL_GAMEPAD_AXIS_LEFT_TRIGGER)
+                        bindings[14] |= bit;
+                    if (source == SDL_GAMEPAD_AXIS_RIGHT_TRIGGER)
+                        bindings[15] |= bit;
+                    if (source == -1)
+                        for (unsigned n = 0; n < sizeof kButtons / sizeof kButtons[0]; ++n)
+                            if (axis.nativeButton == (int)kButtons[n])
+                                bindings[n] |= bit;
+                }
+                if (axis.padAxis == PAD_AXIS_RIGHT_X_POS)
+                {
+                    if (source == SDL_GAMEPAD_AXIS_LEFTX) bindings[16] = 1;
+                    if (source == SDL_GAMEPAD_AXIS_RIGHTX) bindings[17] = 1;
+                }
+            }
+        break;
+    }
+    std::lock_guard<std::mutex> lock(s_bindingMutex);
+    for (int i = 0; i < kBindingCount; ++i)
+        s_bindings[i] = found ? bindings[i] : -1;
+}
+
 void attach()
 {
     if (s_virtual != nullptr || s_disabled)
@@ -96,6 +165,7 @@ void attach()
     desc.button_mask = (1u << SDL_GAMEPAD_BUTTON_SOUTH) | (1u << SDL_GAMEPAD_BUTTON_EAST) |
                        (1u << SDL_GAMEPAD_BUTTON_WEST) | (1u << SDL_GAMEPAD_BUTTON_NORTH) |
                        (1u << SDL_GAMEPAD_BUTTON_START) |
+                       (1u << SDL_GAMEPAD_BUTTON_LEFT_SHOULDER) |
                        (1u << SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER) |
                        (1u << SDL_GAMEPAD_BUTTON_BACK) |
                        (1u << SDL_GAMEPAD_BUTTON_LEFT_STICK) |
@@ -166,9 +236,8 @@ void push_state()
     SDL_SetJoystickVirtualButton(s_virtual, SDL_GAMEPAD_BUTTON_WEST, (b & TOUCH_X) != 0);
     SDL_SetJoystickVirtualButton(s_virtual, SDL_GAMEPAD_BUTTON_NORTH, (b & TOUCH_Y) != 0);
     SDL_SetJoystickVirtualButton(s_virtual, SDL_GAMEPAD_BUTTON_START, (b & TOUCH_START) != 0);
-    // Map either bumper to GameCube Z.
-    SDL_SetJoystickVirtualButton(s_virtual, SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER,
-                                 (b & (TOUCH_Z | TOUCH_LB)) != 0);
+    SDL_SetJoystickVirtualButton(s_virtual, SDL_GAMEPAD_BUTTON_LEFT_SHOULDER, (b & TOUCH_LB) != 0);
+    SDL_SetJoystickVirtualButton(s_virtual, SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER, (b & TOUCH_Z) != 0);
     SDL_SetJoystickVirtualButton(s_virtual, SDL_GAMEPAD_BUTTON_BACK, (b & TOUCH_BACK) != 0);
     SDL_SetJoystickVirtualButton(s_virtual, SDL_GAMEPAD_BUTTON_LEFT_STICK, (b & TOUCH_L3) != 0);
     SDL_SetJoystickVirtualButton(s_virtual, SDL_GAMEPAD_BUTTON_RIGHT_STICK, (b & TOUCH_R3) != 0);
@@ -239,6 +308,7 @@ extern "C" void PortTouchUpdate(void)
     }
 
     push_state();
+    publish_bindings();
 }
 
 extern "C" int PortTouchActive(void)
@@ -258,6 +328,37 @@ Java_io_github_newcoke_strikers_TouchGamepad_sendNative(JNIEnv*, jclass, jint bu
     s_stickY.store((int)ly, std::memory_order_relaxed);
     s_cstickX.store((int)cx, std::memory_order_relaxed);
     s_cstickY.store((int)cy, std::memory_order_relaxed);
+}
+
+extern "C" JNIEXPORT jboolean JNICALL
+Java_io_github_newcoke_strikers_OverlayView_nativeBindings(JNIEnv* env, jclass, jintArray output)
+{
+    if (output == nullptr || env->GetArrayLength(output) != kBindingCount)
+        return JNI_FALSE;
+    s_bindingsRequested.store(true, std::memory_order_relaxed);
+    jint bindings[kBindingCount];
+    {
+        std::lock_guard<std::mutex> lock(s_bindingMutex);
+        for (int i = 0; i < kBindingCount; ++i)
+            bindings[i] = s_bindings[i];
+    }
+    if (bindings[0] < 0)
+        return JNI_FALSE;
+    env->SetIntArrayRegion(output, 0, kBindingCount, bindings);
+    return JNI_TRUE;
+}
+
+static std::atomic<bool> s_matchLabelsActive{false};
+
+void PortAndroidSetTouchMatchActive(bool active)
+{
+    s_matchLabelsActive.store(active, std::memory_order_relaxed);
+}
+
+extern "C" JNIEXPORT jboolean JNICALL
+Java_io_github_newcoke_strikers_OverlayView_nativeMatchActive(JNIEnv*, jclass)
+{
+    return s_matchLabelsActive.load(std::memory_order_relaxed) ? JNI_TRUE : JNI_FALSE;
 }
 
 extern "C" JNIEXPORT jboolean JNICALL

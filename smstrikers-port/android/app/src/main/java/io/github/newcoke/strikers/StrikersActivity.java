@@ -34,6 +34,7 @@ public class StrikersActivity extends SDLActivity {
     private OverlayView overlay;
     private HudView hud;
     private GamePreferences prefs;
+    private int settingsShortcut;
     private final Handler handler = new Handler(Looper.getMainLooper());
 
     @Override
@@ -118,7 +119,8 @@ public class StrikersActivity extends SDLActivity {
     public boolean dispatchKeyEvent(KeyEvent event) {
         // Android may reserve Guide on some devices. Leave gameplay buttons to SDL.
         if (overlay != null && event.isFromSource(InputDevice.SOURCE_GAMEPAD)
-                && event.getKeyCode() == KeyEvent.KEYCODE_BUTTON_MODE) {
+                && (event.getKeyCode() == KeyEvent.KEYCODE_BUTTON_MODE
+                    || (settingsShortcut != 0 && event.getKeyCode() == settingsShortcut))) {
             if (event.getAction() == KeyEvent.ACTION_UP && !event.isCanceled()) openSettings();
             return true;
         }
@@ -155,13 +157,14 @@ public class StrikersActivity extends SDLActivity {
             @Override public void run() {
                 if (overlay != null) {
                     final boolean showOverlay = TouchGamepad.isActive();
+                    if (showOverlay) overlay.updateMatchLabels();
                     final int visibility = showOverlay ? View.VISIBLE : View.GONE;
                     if (overlay.getVisibility() != visibility) {
                         if (!showOverlay) overlay.releaseAll();
                         overlay.setVisibility(visibility);
                     }
                 }
-                handler.postDelayed(this, 1000);
+                handler.postDelayed(this, 250);
             }
         }, 1000);
     }
@@ -170,7 +173,12 @@ public class StrikersActivity extends SDLActivity {
     protected void onResume() {
         super.onResume();
         enterImmersiveMode();
-        if (overlay != null && prefs != null) overlay.applyPreferences(prefs);
+        if (prefs != null) {
+            String shortcut = prefs.getString(GamePreferences.SETTINGS_SHORTCUT);
+            settingsShortcut = shortcut.equals("l3") ? KeyEvent.KEYCODE_BUTTON_THUMBL
+                    : shortcut.equals("r3") ? KeyEvent.KEYCODE_BUTTON_THUMBR : 0;
+            if (overlay != null) overlay.applyPreferences(prefs);
+        }
         if (hud != null && prefs != null) {
             hud.setVisibility(prefs.getBoolean(GamePreferences.HUD) ? View.VISIBLE : View.GONE);
         }

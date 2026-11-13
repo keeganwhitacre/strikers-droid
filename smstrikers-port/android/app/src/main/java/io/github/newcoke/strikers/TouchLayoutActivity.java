@@ -30,6 +30,14 @@ public class TouchLayoutActivity extends Activity {
         reset.setText(R.string.touch_reset_positions);
         reset.setOnClickListener(view -> overlay.resetPositions());
         actions.addView(reset);
+        Button smaller = new Button(this);
+        smaller.setText(R.string.touch_smaller);
+        smaller.setOnClickListener(view -> overlay.resizeSelected(-0.1f));
+        actions.addView(smaller);
+        Button larger = new Button(this);
+        larger.setText(R.string.touch_larger);
+        larger.setOnClickListener(view -> overlay.resizeSelected(0.1f));
+        actions.addView(larger);
         Button done = new Button(this);
         done.setText(android.R.string.ok);
         done.setOnClickListener(view -> finish());

@@ -9,8 +9,9 @@ and rollback code come from [Strikers upstream](https://github.com/new-coke/stri
 - Use an ARM64 device running Android 9 or later with Vulkan support.
 - Use data from your own US, European, or Japanese copy of Super Mario Strikers.
   The APK contains no game assets.
-- Download `strikers.apk` from a successful [Android APK workflow run](https://github.com/keeganwhitacre/strikers-droid/actions?query=branch%3Aandroid-port)
-  or build it below. CI artifacts require a signed-in GitHub account.
+- Download `strikers.apk` from a successful [Android APK workflow run](https://github.com/keeganwhitacre/strikers-droid/actions?query=branch%3Amain)
+  or build it below. Open the run and download `strikers.apk` under **Artifacts**.
+  CI artifacts require a signed-in GitHub account.
 
 The app appears as **Strikers**. It retains the settings preview's package ID and
 storage location. Android requires the same signing key for an in-place update.
@@ -76,6 +77,18 @@ Battery uses the original render scale and a 30 FPS cap. Balanced uses a
 scale and restores the engine’s display-based limiter. All three turn MSAA
 off and leave VSync and anisotropic filtering available as manual settings.
 
+In **Move touch controls**, select a control and use **Smaller** or **Larger**
+to resize it individually. The editor saves size and position per layout.
+Enable **Match action labels** to show Shoot, Pass, and the Lob modifier during active play.
+In **Controller bindings**, the Settings shortcut can also use L3 or R3.
+That stick click is reserved for Settings while the shortcut is enabled.
+
+With two or more controllers connected, local **Choose Sides** shows the
+assigned player ports and highlights button presses. Hold **Back / Select**
+and press the bottom, right, left, or top face button to claim P1, P2, P3, or
+P4 respectively. An occupied port swaps controllers. After a swap, choose
+teams and ready up again.
+
 ## Texture packs
 
 Open **Settings → Video → Texture packs** and import a Dolphin-format ZIP with PNG or DDS
@@ -90,7 +103,9 @@ in `strikers.ini`.
 On the in-game main menu, press the on-screen **RB** button (GameCube **Z**) or the controller's
 displayed Online button. Use the stick and face buttons to navigate the online panel. The same pad
 edits addresses in the character wheel. Use **Nearby rooms** on the same network or **Join by
-address** for a direct connection.
+address** for a direct connection. On Android, **Paste** or the mapped GameCube
+Y button fills the address field. Choose **Join** to connect. **Controller check**
+in the Online menu shows Strikers’ player ports and highlights held buttons.
 
 Peers need the same upstream version and a compatible disc region. US and European copies can play
 together. Japanese copies match other Japanese copies.
@@ -111,6 +126,7 @@ GPU and driver, disc region, and results in the release notes or test issue.
 | Install and launch | Install the APK. Pick a local disc image, launch a match, and relaunch the app to check that the selection persists. Try upgrading from a build signed with the same key and verify that settings and saves survive. |
 | Native settings | Change resolution, frame limit, and touch settings. Restart the game to check that settings applied. Open Settings from the touch overlay and return to the match. |
 | Input and lifecycle | Play with touch, connect and disconnect a physical controller, then background and resume the game. Verify that the overlay returns when the controller disconnects and that inputs release on focus loss. |
+| Local multiplayer | Connect multiple controllers, identify each player port on Choose Sides, swap ports, reselect teams, and finish a local Friendly. |
 | Graphics and textures | Play with the system Vulkan driver. If supported, test a custom driver and return to the system driver. Import a known texture pack, confirm a visible replacement, disable the pack, and confirm the original texture returns. |
 | Online | Play Android-to-Android and Android-to-desktop using builds of the same upstream version. Test discovery and direct connection, then complete a match and rematch. |
 

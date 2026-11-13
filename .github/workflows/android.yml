@@ -2,7 +2,7 @@ name: Android APK
 
 on:
   push:
-    branches: [android-port]
+    branches: [main, android-port, couch]
     paths:
       - '.github/workflows/android.yml'
       - 'smstrikers-port/**'

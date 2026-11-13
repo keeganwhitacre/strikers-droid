@@ -21,12 +21,17 @@ public class OverlayView extends View {
     private static final int CONTROL_ACCENT = 0xFFF2E9D4;
     private static final int SETTINGS_ACCENT = 0xFFFFC552;
 
+    private static final String[] PAD_KEYS = {"a", "b", "x", "y", "z", "start", "l", "r",
+                "dpad_up", "dpad_down", "dpad_left", "dpad_right"};
+    private static final String[] PAD_DEFAULTS = {"a", "b", "x", "y", "rightshoulder", "start", "lefttrigger",
+                "righttrigger", "dpup", "dpdown", "dpleft", "dpright"};
+    private static final String[] PAD_LABELS = {"A", "B", "X", "Y", "Z", "START", "L", "R", "↑", "↓", "←", "→"};
     private enum Role { BUTTON, LEFT_TRIGGER, RIGHT_TRIGGER, STICK, C_STICK, MENU }
 
     private enum Shape { CIRCLE, RECTANGLE, STICK }
 
     private static final class Control {
-        final String label;
+        String label;
         final Shape shape;
         Role role = Role.BUTTON;
         int buttonMask;
@@ -61,6 +66,39 @@ public class OverlayView extends View {
 
     private android.content.SharedPreferences positions;
     private Control dragging;
+    private String selectedControl;
+    private boolean actionLabels, matchLabels;
+
+    private static native boolean nativeMatchActive();
+    private static native boolean nativeBindings(int[] output);
+    private final int[] resolved = new int[18];
+    private final int[] nextBindings = new int[18];
+    private boolean hasResolvedBindings;
+    private static final int[] PAD_BITS = {0x100, 0x200, 0x400, 0x800, 0x10, 0x1000,
+            0x40, 0x20, 0x8, 0x4, 0x1, 0x2};
+
+    void updateMatchLabels() {
+        boolean active = actionLabels && nativeMatchActive();
+        boolean available = nativeBindings(nextBindings);
+        boolean changed = available != hasResolvedBindings
+                || (available && !java.util.Arrays.equals(resolved, nextBindings));
+        hasResolvedBindings = available;
+        if (available && changed) System.arraycopy(nextBindings, 0, resolved, 0, resolved.length);
+        if (!changed && active == matchLabels) return;
+        matchLabels = active;
+        for (Control control : controls) updateLabel(control);
+        invalidate();
+    }
+
+    void resizeSelected(float delta) {
+        if (selectedControl == null) return;
+        String key = selectedControl + "_size";
+        float scale = positions.getFloat(key, 1f) + delta;
+        positions.edit().putFloat(key, Math.max(0.65f, Math.min(1.45f, scale))).apply();
+        layoutControls(getWidth(), getHeight());
+        invalidate();
+    }
+    private java.util.Map<String, String> bindings;
     private boolean editing;
     private float dragX, dragY;
 
@@ -71,6 +109,7 @@ public class OverlayView extends View {
     }
 
     void resetPositions() {
+        selectedControl = null;
         positions.edit().clear().apply();
         layoutControls(getWidth(), getHeight());
         invalidate();
@@ -101,8 +140,10 @@ public class OverlayView extends View {
     }
 
     void applyPreferences(GamePreferences prefs) {
+        actionLabels = prefs.getBoolean(GamePreferences.TOUCH_ACTION_LABELS);
         opacity = prefs.getInt(GamePreferences.TOUCH_OPACITY) / 100f;
         layout = prefs.getString(GamePreferences.TOUCH_LAYOUT);
+        if (bindings == null) bindings = GameConfig.readSettings(getContext());
         positions = getContext().getSharedPreferences("touch_positions_" + layout, Context.MODE_PRIVATE);
         size = prefs.getInt(GamePreferences.TOUCH_SIZE) / 100f;
         deadzone = prefs.getInt(GamePreferences.TOUCH_DEADZONE) / 100f;
@@ -247,12 +288,91 @@ public class OverlayView extends View {
         menu.radius = settingsRadius;
         controls.add(menu);
         for (Control control : controls) {
+            updateLabel(control);
             String key = positionKey(control);
-            if (positions != null && positions.contains(key + "_x")) {
+            if (positions == null) continue;
+            float scaleFactor = positions.getFloat(key + "_size", 1f);
+            boolean rectangle = control.shape == Shape.RECTANGLE;
+            float x = rectangle ? control.bounds.centerX() : control.cx;
+            float centerY = rectangle ? control.bounds.centerY() : control.cy;
+            if (rectangle) {
+                control.bounds.inset(control.bounds.width() * (1f - scaleFactor) / 2f,
+                        control.bounds.height() * (1f - scaleFactor) / 2f);
+            } else {
+                control.radius *= scaleFactor;
+            }
+            if (positions.contains(key + "_x")) {
                 moveControl(control, leftInset + positions.getFloat(key + "_x", 0f) * usableWidth(),
                         topInset + positions.getFloat(key + "_y", 0f) * usableHeight());
+            } else {
+                moveControl(control, x, centerY);
             }
         }
+    }
+
+    private void updateLabel(Control control) {
+        String source;
+        switch (control.role) {
+            case LEFT_TRIGGER: source = "lefttrigger"; break;
+            case RIGHT_TRIGGER: source = "righttrigger"; break;
+            case STICK:
+            case C_STICK:
+                if (hasResolvedBindings) {
+                    int index = control.role == Role.STICK ? 16 : 17;
+                    control.label = resolved[index] == 1 ? "C" : "LS";
+                    return;
+                }
+                String swap = bindings.get("pad_swap_sticks");
+                if (swap != null && !java.util.Arrays.asList("0", "false", "off", "no")
+                        .contains(swap.toLowerCase(java.util.Locale.ROOT))) {
+                    control.label = control.role == Role.STICK ? "C" : "LS";
+                }
+                return;
+            case BUTTON:
+                switch (control.buttonMask) {
+                    case TouchGamepad.A: source = "a"; break;
+                    case TouchGamepad.B: source = "b"; break;
+                    case TouchGamepad.X: source = "x"; break;
+                    case TouchGamepad.Y: source = "y"; break;
+                    case TouchGamepad.Z: source = "rightshoulder"; break;
+                    case TouchGamepad.LB: source = "leftshoulder"; break;
+                    case TouchGamepad.START: source = "start"; break;
+                    case TouchGamepad.UP: source = "dpup"; break;
+                    case TouchGamepad.DOWN: source = "dpdown"; break;
+                    case TouchGamepad.LEFT: source = "dpleft"; break;
+                    case TouchGamepad.RIGHT: source = "dpright"; break;
+                    case TouchGamepad.BACK: source = "back"; break;
+                    case TouchGamepad.L3: source = "leftstick"; break;
+                    case TouchGamepad.R3: source = "rightstick"; break;
+                    default: return;
+                }
+                break;
+            default: return;
+        }
+        int resolvedIndex = control.role == Role.LEFT_TRIGGER ? 14
+                : control.role == Role.RIGHT_TRIGGER ? 15
+                : Integer.numberOfTrailingZeros(control.buttonMask);
+        StringBuilder assigned = new StringBuilder();
+        for (int i = 0; i < PAD_KEYS.length; i++) {
+            String mapped = bindings.getOrDefault("pad_" + PAD_KEYS[i], PAD_DEFAULTS[i]).toLowerCase(java.util.Locale.ROOT);
+            boolean supported = java.util.Arrays.asList(PAD_DEFAULTS).contains(mapped)
+                    || mapped.equals("leftshoulder") || mapped.equals("back")
+                    || mapped.equals("leftstick") || mapped.equals("rightstick");
+            boolean acceptsTrigger = PAD_KEYS[i].equals("l") || PAD_KEYS[i].equals("r");
+            if (!supported || (!acceptsTrigger && mapped.endsWith("trigger"))) {
+                mapped = PAD_DEFAULTS[i];
+            }
+            boolean assignedHere = hasResolvedBindings
+                    ? (resolved[resolvedIndex] & PAD_BITS[i]) != 0 : source.equals(mapped);
+            if (!assignedHere) continue;
+            if (assigned.length() != 0) assigned.append('/');
+            String label = PAD_LABELS[i];
+            if (matchLabels && i == 0) label = getResources().getString(R.string.touch_pass);
+            if (matchLabels && i == 1) label = getResources().getString(R.string.touch_shoot);
+            if (matchLabels && PAD_KEYS[i].equals("l")) label = getResources().getString(R.string.touch_lob);
+            assigned.append(label);
+        }
+        control.label = assigned.length() == 0 ? "–" : assigned.toString();
     }
 
     private Control face(String label, float cx, float cy, float radius, int buttonMask) {
@@ -264,7 +384,8 @@ public class OverlayView extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         for (Control c : controls) {
-            final float targetPressure = c.pointerId >= 0 ? 1f : 0f;
+            final float targetPressure = c.pointerId >= 0
+                    || (editing && positionKey(c).equals(selectedControl)) ? 1f : 0f;
             c.pressure += (targetPressure - c.pressure) * 0.35f;
             if (Math.abs(targetPressure - c.pressure) > 0.003f) postInvalidateOnAnimation();
             else c.pressure = targetPressure;
@@ -364,13 +485,15 @@ public class OverlayView extends View {
         final float k = dist > maxTravel ? maxTravel / dist : 1f;
         path.reset();
         path.addCircle(c.cx + dx * k, c.cy + dy * k, c.radius * 0.56f, Path.Direction.CW);
-        paintControl(canvas, path, c.pressure, c.role == Role.MENU ? SETTINGS_ACCENT : CONTROL_ACCENT);
+        paintControl(canvas, path, c.pressure, CONTROL_ACCENT);
+        drawLabel(canvas, c.label, c.cx, c.cy, c.radius * 0.5f, c.pressure);
     }
 
     private void drawLabel(Canvas canvas, String s, float cx, float cy,
                           float textSize, float pressure) {
         if (s == null || s.isEmpty()) return;
         labelPaint.setTextSize(textSize);
+        if (s.length() > 3) labelPaint.setTextSize(textSize * 3f / s.length());
         labelPaint.setColor(Color.WHITE);
         labelPaint.setAlpha(alpha(216 + 39 * pressure));
         labelPaint.setShadowLayer(textSize * 0.18f, 0, textSize * 0.04f, 0x66000000);
@@ -445,6 +568,7 @@ public class OverlayView extends View {
                     Control control = controls.get(i);
                     if (!control.contains(x, y)) continue;
                     dragging = control;
+                    selectedControl = positionKey(control);
                     dragX = x - (control.shape == Shape.RECTANGLE ? control.bounds.centerX() : control.cx);
                     dragY = y - (control.shape == Shape.RECTANGLE ? control.bounds.centerY() : control.cy);
                     break;
