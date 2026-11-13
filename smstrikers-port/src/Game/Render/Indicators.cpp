@@ -20,6 +20,100 @@
 #include "port/lockstep.h"
 #include "port/simcamera.h"
 
+#if defined(__ANDROID__) && defined(PORT_USE_AURORA)
+#include "Game/FE/feManager.h"
+#include "Game/Team.h"
+#include "port/online_panel.h"
+
+#include <algorithm>
+#include <cstdio>
+#include <cstdlib>
+#include <imgui.h>
+
+namespace {
+bool ClearMatchHUD()
+{
+    static const bool enabled = [] {
+        const char* value = std::getenv("STRIKERS_CLEAR_MATCH_HUD");
+        return value && value[0] == '1' && value[1] == '\0';
+    }();
+    return enabled && ImGui::GetCurrentContext() && g_pGame->IsGameplayOrOvertime() &&
+           !FrontEnd::m_bInPauseMenuState && !PortOnlinePanelOpen();
+}
+
+float HUDTextSize()
+{
+    return std::clamp(ImGui::GetIO().DisplaySize.y * 0.032f, 14.0f, 64.0f);
+}
+
+void DrawHUDBadge(ImVec2 center, const char* text, ImU32 accent, float opacity = 1.0f)
+{
+    auto* draw = ImGui::GetBackgroundDrawList();
+    auto* font = ImGui::GetFont();
+    const float size = HUDTextSize();
+    const ImVec2 textSize = font->CalcTextSizeA(size, 10000.0f, 0.0f, text);
+    const float pad = size * 0.28f;
+    const ImVec2 display = ImGui::GetIO().DisplaySize;
+    const float halfWidth = textSize.x * 0.5f + pad;
+    const float halfHeight = textSize.y * 0.5f + pad * 0.5f;
+    center.x = std::clamp(center.x, halfWidth, std::max(halfWidth, display.x - halfWidth));
+    center.y = std::clamp(center.y, halfHeight, std::max(halfHeight, display.y - halfHeight));
+    const ImVec2 first(center.x - halfWidth, center.y - halfHeight);
+    const ImVec2 last(center.x + halfWidth, center.y + halfHeight);
+    const int alpha = static_cast<int>(opacity * 255.0f);
+    const ImU32 edge = (accent & ~IM_COL32_A_MASK) | (static_cast<ImU32>(alpha) << IM_COL32_A_SHIFT);
+    draw->AddRectFilled(first, last, IM_COL32(10, 18, 28, alpha * 9 / 10), pad);
+    draw->AddRect(first, last, edge, pad, 0, 2.0f);
+    draw->AddText(font, size, ImVec2(center.x - textSize.x * 0.5f, center.y - textSize.y * 0.5f),
+                  IM_COL32(255, 255, 255, alpha), text);
+}
+
+void DrawPlayerBadge(cPlayer* player, float x, float y, float opacity)
+{
+    char label[8];
+    std::snprintf(label, sizeof label, "P%d", player->GetGlobalPad()->m_padIndex + 1);
+    const ImVec2 display = ImGui::GetIO().DisplaySize;
+    const ImVec2 center(x * display.x / glGetOrthographicWidth(),
+                        y * display.y / glGetOrthographicHeight());
+    DrawHUDBadge(center, label, IM_COL32(255, 206, 94, 255), opacity);
+}
+
+const char* ItemName(ePowerUpType item)
+{
+    switch (item)
+    {
+    case POWER_UP_GREEN_SHELL: return "Green Shell";
+    case POWER_UP_RED_SHELL: return "Red Shell";
+    case POWER_UP_SPINY_SHELL: return "Spiny Shell";
+    case POWER_UP_FREEZE_SHELL: return "Freeze Shell";
+    case POWER_UP_BANANA: return "Banana";
+    case POWER_UP_BOBOMB: return "Bob-omb";
+    case POWER_UP_CHAIN_CHOMP: return "Chain Chomp";
+    case POWER_UP_MUSHROOM: return "Mushroom";
+    case POWER_UP_STAR: return "Star";
+    default: return "";
+    }
+}
+
+void DrawItemBadges()
+{
+    const ImVec2 display = ImGui::GetIO().DisplaySize;
+    for (int side = 0; side < 2; ++side)
+    {
+        const cTeam& team = *g_pTeams[side];
+        const PowerUpTeamType item = team.GetCurrentPowerUp();
+        if (item.eType == POWER_UP_NONE)
+            continue;
+        char label[64];
+        std::snprintf(label, sizeof label, "%s  %s x%d", side == HOME ? "HOME" : "AWAY",
+                      ItemName(item.eType), item.nnumOfPowerups);
+        DrawHUDBadge(ImVec2(display.x * (side == HOME ? 0.25f : 0.75f), display.y * 0.16f),
+                     label, IM_COL32(255, 206, 94, 255));
+    }
+}
+} // namespace
+#endif
+
 static float s_fOverheadSize = 35.0f;
 static float s_fAdditiveBlendingIntensity = 0.55f;
 static float s_fAdditiveTextureScale = 1.25f;
@@ -224,6 +318,10 @@ static inline void DrawOffscreenIndicator(const nlVector3& v3NormalizedScreenPos
 
     scale = (float)fabs(1.0f - max_float((float)fabs(v3NormalizedScreenPos.y), (float)fabs(v3NormalizedScreenPos.x)));
     scale = InterpolateRangeClamped(1.0f, 0.5f, 0.0f, 2.0f, scale);
+#if defined(__ANDROID__) && defined(PORT_USE_AURORA)
+    if (ClearMatchHUD() && pInfo->m_fOpacity >= 0.5f)
+        DrawPlayerBadge(pCharacter, screenPosX, screenPosY + 20.0f, pInfo->m_fOpacity);
+#endif
     DrawIndicator((int)screenPosX, (int)screenPosY, 64.0f * scale, 64.0f * scale, pInfo->m_fOpacity, GetCharacterTexID(pCharacter), 0.0f, 1);
 }
 
@@ -334,6 +432,11 @@ static void UpdateAndRenderPlayerIndicators(float)
 
         // PORT: cPlayerIndicatorState was a stand-in reading cPlayer at console 0x19C and 0x1C8.
         cPlayer* pIndicatorPlayer = (cPlayer*)g_pCharacters[i];
+#if defined(__ANDROID__) && defined(PORT_USE_AURORA)
+        if (ClearMatchHUD() && fOpacity > 0.5f && fX >= 0.0f &&
+            fX <= glGetOrthographicWidth() && fY >= 0.0f && fY <= glGetOrthographicHeight())
+            DrawPlayerBadge(pIndicatorPlayer, fX, fY + 18.0f, fOpacity);
+#endif
 
         if (pIndicatorPlayer->m_UserControlledTime < 0.5f)
         {
@@ -375,6 +478,10 @@ void UpdateAndRenderIndicators(float dt)
 {
     UpdateAndRenderOffScreenIndicators(dt);
     UpdateAndRenderPlayerIndicators(dt);
+#if defined(__ANDROID__) && defined(PORT_USE_AURORA)
+    if (ClearMatchHUD())
+        DrawItemBadges();
+#endif
 
     if (s_bPulseGlowTexture)
     {

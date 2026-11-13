@@ -173,3 +173,10 @@ the night's standings, but it won't advance a rotation, series, or cup fixture.
 
 Couch Night stays active while the game is running. Lifetime results and the
 nickname roster are saved across restarts.
+
+### Experimental match HUD
+
+On the `hud-clarity` branch, turn on **Settings → Video → Clearer match HUD**
+and restart the game. During active play, high-contrast P1–P4 badges follow
+controlled players, including their off-screen markers. Labels under the
+scoreboard show each team's ready item and count. The switch defaults to off.
