@@ -53,6 +53,7 @@ void synchronize();
 #endif
 
 #if defined(__ANDROID__)
+#include "port/couch_scorebook.h"
 void PortAndroidShareRoomAddress(const char* address);
 #endif
 
@@ -670,6 +671,7 @@ enum Screen
     SCR_HOME,
 #if defined(__ANDROID__)
     SCR_CONTROLLER_CHECK,
+    SCR_COUCH_SCOREBOOK,
 #endif
     SCR_JOIN,
     SCR_NEARBY,
@@ -1319,6 +1321,38 @@ void wheel_input(Wheel& w, const char* charset, int maxLen)
     wheel_edit(w, charset, maxLen, moves);
 }
 
+#if defined(__ANDROID__)
+PortCouchResult s_couchResults[8];
+int s_couchResultCount;
+PortCouchRoster s_couchRoster;
+Wheel s_couchName;
+int s_couchEditing = -1;
+int s_rival[2];
+int s_rivalWins, s_rivalLosses;
+bool s_couchSaveFailed;
+bool s_couchDuplicateName;
+
+const char* couch_name(int id)
+{
+    return id > 0 && s_couchRoster.names[id - 1][0] ? s_couchRoster.names[id - 1] : "Guest";
+}
+
+int next_couch_player(int current, int direction, int skip = -1)
+{
+    do {
+        current = (current + direction + kCouchRosterSize + 1) % (kCouchRosterSize + 1);
+    } while (current != 0 && (current == skip || !s_couchRoster.names[current - 1][0]));
+    return current;
+}
+
+bool save_couch_roster(const PortCouchRoster& next)
+{
+    s_couchSaveFailed = !PortCouchSaveRoster(next);
+    if (!s_couchSaveFailed) s_couchRoster = next;
+    return !s_couchSaveFailed;
+}
+#endif
+
 void draw_home(const OnlineState& st)
 {
     begin_screen("##online.home", text(T_ONLINE), st.settings.nickname);
@@ -1328,7 +1362,8 @@ void draw_home(const OnlineState& st)
         HOME_NEARBY,
         HOME_JOIN,
         HOME_SETTINGS,
-        HOME_CONTROLLER_CHECK
+        HOME_CONTROLLER_CHECK,
+        HOME_COUCH_SCOREBOOK
     };
     int choice = -1;
     int action = -1;
@@ -1355,6 +1390,12 @@ void draw_home(const OnlineState& st)
     {
         choice = item;
         action = HOME_CONTROLLER_CHECK;
+    }
+    remembered(item++);
+    if (row("couch-scorebook", "Couch Scorebook"))
+    {
+        choice = item;
+        action = HOME_COUCH_SCOREBOOK;
     }
     remembered(item++);
 #endif
@@ -1399,6 +1440,16 @@ void draw_home(const OnlineState& st)
     case HOME_SETTINGS: s_idleScreen = SCR_SETTINGS; break;
 #if defined(__ANDROID__)
     case HOME_CONTROLLER_CHECK: s_idleScreen = SCR_CONTROLLER_CHECK; break;
+    case HOME_COUCH_SCOREBOOK:
+        s_couchResultCount = PortCouchRecentResults(s_couchResults, 8);
+        PortCouchLoadRoster(s_couchRoster);
+        s_couchEditing = -1;
+        s_couchSaveFailed = false;
+        s_rival[0] = next_couch_player(0, 1);
+        s_rival[1] = next_couch_player(s_rival[0], 1, s_rival[0]);
+        PortCouchRivalry(s_rival[0], s_rival[1], s_rivalWins, s_rivalLosses);
+        s_idleScreen = SCR_COUCH_SCOREBOOK;
+        break;
 #endif
     default:            break;
     }
@@ -1407,6 +1458,147 @@ void draw_home(const OnlineState& st)
 }
 
 #if defined(__ANDROID__)
+void draw_couch_name()
+{
+    s_padOwned = true;
+    wheel_input(s_couchName, kNameChars, kCouchNameLength);
+    begin_screen("##couch.nickname", "Player nickname", nullptr);
+    muted_text(text(T_WHEEL_HELP));
+    wheel_draw(s_couchName, kCouchNameLength);
+    const bool save = row("save", text(T_HINT_SAVE));
+    const Hint hints[] = {{ kDpad, T_HINT_MOVE }, { PAD_BUTTON_A, T_HINT_SAVE },
+                          { PAD_BUTTON_X, T_HINT_DELETE }, { PAD_BUTTON_B, T_HINT_BACK }};
+    if (s_couchSaveFailed) muted_text("Could not save roster.");
+    if (s_couchDuplicateName) muted_text("That nickname is already in the roster.");
+    end_screen(hints, 4);
+    if (back_pressed())
+        s_couchEditing = -1;
+    else if (save || pad_pressed(PAD_BUTTON_A))
+    {
+        char name[kCouchNameLength + 1];
+        clean_field(name, sizeof name, s_couchName.text, true);
+        if (!name[0])
+            return;
+        s_couchDuplicateName = false;
+        for (int i = 0; i < kCouchRosterSize; ++i)
+        {
+            if (i != s_couchEditing && SDL_strcasecmp(name, s_couchRoster.names[i]) == 0)
+            {
+                s_couchDuplicateName = true;
+                return;
+            }
+        }
+        auto next = s_couchRoster;
+        std::snprintf(next.names[s_couchEditing], sizeof next.names[0], "%s", name);
+        if (save_couch_roster(next))
+            s_couchEditing = -1;
+    }
+}
+
+void draw_couch_scorebook()
+{
+    if (s_couchEditing >= 0)
+    {
+        draw_couch_name();
+        return;
+    }
+    static const char* const teams[] = {
+        "Daisy", "Donkey Kong", "Luigi", "Mario", "Peach", "Waluigi", "Wario", "Yoshi", "Super Team",
+    };
+    auto team_name = [](int id) {
+        return id >= 0 && id < (int)(sizeof teams / sizeof teams[0]) ? teams[id] : "?";
+    };
+
+    auto player_names = [](unsigned players, char* label, size_t capacity) {
+        label[0] = '\0';
+        for (int i = 0; i < kCouchRosterSize; ++i)
+        {
+            if (!(players & (1u << i)))
+                continue;
+            const size_t used = std::strlen(label);
+            std::snprintf(label + used, capacity - used, "%s%s", used ? " + " : "",
+                          couch_name(i + 1));
+        }
+        if (!label[0])
+            std::snprintf(label, capacity, "Guest");
+    };
+
+    begin_screen("##couch.scorebook", "Couch Scorebook", nullptr, false, 40.0f);
+    section("Next match");
+    for (int port = 0; port < 4; ++port)
+    {
+        ImGui::PushID(port);
+        const int step = spin_row("player", format("P%d", port + 1),
+                                  couch_name(s_couchRoster.ports[port]), true);
+        if (step != 0)
+        {
+            auto next = s_couchRoster;
+            const int player = next_couch_player(next.ports[port], step);
+            if (player != 0)
+                for (int& other : next.ports)
+                    if (&other != &next.ports[port] && other == player)
+                        other = next.ports[port];
+            next.ports[port] = player;
+            save_couch_roster(next);
+        }
+        ImGui::PopID();
+    }
+    section("Head-to-head");
+    for (int i = 0; i < 2; ++i)
+    {
+        ImGui::PushID(i);
+        const int step = spin_row("rival", i == 0 ? "First player" : "Opponent",
+                                  couch_name(s_rival[i]), true);
+        if (step != 0)
+        {
+            s_rival[i] = next_couch_player(s_rival[i], step, s_rival[1 - i]);
+            PortCouchRivalry(s_rival[0], s_rival[1], s_rivalWins, s_rivalLosses);
+        }
+        ImGui::PopID();
+    }
+    if (s_rival[0] && s_rival[1])
+        ImGui::TextColored(kGold, "%d wins  /  %d losses", s_rivalWins, s_rivalLosses);
+
+    section("Roster");
+    for (int i = 0; i < kCouchRosterSize; ++i)
+    {
+        ImGui::PushID(i);
+        const bool exists = s_couchRoster.names[i][0] != '\0';
+        if (row("nickname", exists ? s_couchRoster.names[i] : "Add player"))
+        {
+            s_couchEditing = i;
+            s_couchDuplicateName = false;
+            s_couchSaveFailed = false;
+            wheel_set(s_couchName, s_couchRoster.names[i], kCouchNameLength);
+        }
+        ImGui::PopID();
+        if (!exists) break;
+    }
+    if (s_couchSaveFailed) muted_text("Could not save roster.");
+    section("Recent results");
+    if (s_couchResultCount == 0)
+        muted_text("Finish a local Friendly with a player on each side to start the scorebook.");
+    for (int i = s_couchResultCount - 1; i >= 0; --i)
+    {
+        const auto& match = s_couchResults[i];
+        ImGui::TextColored(kGold, "%s  %d - %d  %s", team_name(match.homeTeam),
+                           match.homeScore, match.awayScore, team_name(match.awayTeam));
+        if (match.homePlayers || match.awayPlayers)
+        {
+            char home[kCouchRosterSize * (kCouchNameLength + 3) + 1];
+            char away[sizeof home];
+            player_names(match.homePlayers, home, sizeof home);
+            player_names(match.awayPlayers, away, sizeof away);
+            ImGui::TextWrapped("%s vs %s", home, away);
+        }
+    }
+    const bool done = row("done", text(T_DONE));
+    const Hint hints[] = { { PAD_BUTTON_B, T_HINT_BACK } };
+    end_screen(hints, 1);
+    if (done || back_pressed())
+        s_idleScreen = SCR_HOME;
+}
+
 void draw_controller_check()
 {
     begin_screen("##online.controllers", "Controller check", nullptr);
@@ -2846,6 +3038,7 @@ void draw_panel(const OnlineState& st)
     case SCR_HOME:       draw_home(st); break;
 #if defined(__ANDROID__)
     case SCR_CONTROLLER_CHECK: draw_controller_check(); break;
+    case SCR_COUCH_SCOREBOOK: draw_couch_scorebook(); break;
 #endif
     case SCR_JOIN:       draw_join(st); break;
     case SCR_NEARBY:     draw_nearby(st); break;

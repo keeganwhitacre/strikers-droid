@@ -12,6 +12,11 @@ StatsTracker* nlSingleton<StatsTracker>::s_pInstance;
 #include "Game/GameInfo.h"
 #include "Game/World/WorldLoader.h"
 #include "NL/nlFormat.h"
+#if defined(__ANDROID__) && defined(PORT_USE_AURORA)
+#include "port/couch_scorebook.h"
+#include "port/lockstep.h"
+#include "port/online.h"
+#endif
 #include <stdio.h>
 
 template <>
@@ -1814,6 +1819,22 @@ void StatsTracker::TrackWinner(int forfeitSide)
 
     if (!mHasGameEnded)
     {
+#if defined(__ANDROID__) && defined(PORT_USE_AURORA)
+        auto* info = nlSingleton<GameInfoManager>::Instance();
+        if (!wasForfeit && scoreLeft != scoreRight && info->IsInFriendlyMode()
+            && !info->mIsInStrikers101Mode && !PortSimOnline() && !PortOnlineActive())
+        {
+            bool human[2]{};
+            for (unsigned short port = 0; port < 4; ++port)
+            {
+                const short side = info->GetPlayingSide(port);
+                if (side == 0 || side == 1)
+                    human[side] = true;
+            }
+            if (human[0] && human[1])
+                PortCouchRecordResult({info->GetTeam(0), info->GetTeam(1), scoreLeft, scoreRight});
+        }
+#endif
         if (nlSingleton<GameInfoManager>::Instance()->IsInCupOrTournamentMode())
         {
             if (mIsOvertime && !wasForfeit)

@@ -1,5 +1,8 @@
 #if defined(__ANDROID__) && defined(PORT_USE_AURORA)
 
+#include "port/couch_scorebook.h"
+
+#include <cstdio>
 #include <SDL3/SDL_gamepad.h>
 #include <dolphin/pad.h>
 #include <imgui.h>
@@ -70,6 +73,16 @@ bool PortAndroidLocalControllers(bool& swapped)
         PADSetPortForIndex((u32)sourceIndex, targetPort);
         if (displaced >= 0)
             PADSetPortForIndex((u32)displaced, sourcePort);
+        PortCouchRoster roster;
+        PortCouchLoadRoster(roster);
+        if (roster.ports[sourcePort] != roster.ports[targetPort])
+        {
+            const int player = roster.ports[sourcePort];
+            roster.ports[sourcePort] = roster.ports[targetPort];
+            roster.ports[targetPort] = player;
+            if (!PortCouchSaveRoster(roster))
+                std::fprintf(stderr, "[scorebook] Could not move nickname assignments\n");
+        }
         swapped = true;
     }
     ImGui::End();

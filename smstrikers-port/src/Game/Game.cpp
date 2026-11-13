@@ -1,3 +1,6 @@
+#if defined(__ANDROID__) && defined(PORT_USE_AURORA)
+#include "port/couch_scorebook.h"
+#endif
 #include "Game/Game.h"
 #include "Game/Sys/clock.h"
 #include "Game/Sys/eventman.h"
@@ -466,6 +469,17 @@ void cGame::PostResetCallback(uintptr_t userData, unsigned long clockId)
 void cGame::BeginGame(bool bRematch, bool bStraightToKickoff)
 {
     int i;
+
+#if defined(__ANDROID__) && defined(PORT_USE_AURORA)
+    auto* info = nlSingleton<GameInfoManager>::Instance();
+    if (info->IsInFriendlyMode() && !PortSimOnline())
+    {
+        short sides[4];
+        for (unsigned short port = 0; port < 4; ++port)
+            sides[port] = info->GetPlayingSide(port);
+        PortCouchBeginMatch(sides);
+    }
+#endif
 
     // PORT: one FP environment and fresh statics per match, whatever the process ran before.
     PortSimHygieneBeginMatch();

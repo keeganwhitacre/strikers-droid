@@ -139,3 +139,14 @@ adb pull /sdcard/Android/data/io.github.newcoke.strikers.settingspreview/files/s
 
 Use the [fork's issue tracker](https://github.com/keeganwhitacre/strikers-droid/issues)
 for Android reports. Include the APK build, device details, and steps to reproduce.
+
+## Couch Scorebook
+
+On the in-game **Online** menu, open **Couch Scorebook**. Add up to eight
+nicknames under **Roster**, then assign up to four of them to P1–P4 under
+**Next match**. Leave a slot as **Guest** when you want to play without
+assigning a nickname.
+
+The scorebook records completed local Friendlies with human players on both
+sides. **Head-to-head** counts wins and losses only when the selected players
+were on opposing sides. Results stay on the device.
