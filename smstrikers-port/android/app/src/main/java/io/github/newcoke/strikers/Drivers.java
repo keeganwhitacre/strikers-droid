@@ -10,8 +10,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.StandardOpenOption;
@@ -43,38 +41,6 @@ final class Drivers {
             this.soname = soname;
             this.directory = directory;
         }
-    }
-
-    static final class Download {
-        final String name;
-        final String description;
-        final String url;
-        final String installId;
-
-        Download(String name, String description, String url, String installId) {
-            this.name = name;
-            this.description = description;
-            this.url = url;
-            this.installId = installId;
-        }
-    }
-
-    static List<Download> downloads(Context ctx) {
-        List<Download> f = new ArrayList<>();
-        f.add(new Download("Turnip 26.0 — Adreno 8xx",
-                ctx.getString(R.string.drv_a8xx_desc),
-                "https://github.com/K11MCH1/AdrenoToolsDrivers/releases/download/v26.0.0-rc08/"
-              + "turnip_a8xx.zip", "turnip-26.0-adreno-8xx"));
-        // Keep the previous install ID so existing driver selections still resolve.
-        f.add(new Download("Turnip 26.0 — General",
-                ctx.getString(R.string.drv_general_desc),
-                "https://github.com/K11MCH1/AdrenoToolsDrivers/releases/download/v26.0.0-rc08/"
-              + "Turnip_v26.0.0_R8.zip", "turnip-26.0-geral"));
-        f.add(new Download("Qualcomm 840",
-                ctx.getString(R.string.drv_qualcomm_desc),
-                "https://github.com/K11MCH1/AdrenoToolsDrivers/releases/download/v840/"
-              + "Qualcomm_840_adpkg.zip", "qualcomm-840"));
-        return f;
     }
 
     private Drivers() {}
@@ -212,29 +178,6 @@ final class Drivers {
                     }
                 }
             }
-        }
-    }
-
-    // Performs network and disk I/O. Call from a worker thread.
-    static Driver download(Context ctx, Download source) {
-        HttpURLConnection c = null;
-        try {
-            c = (HttpURLConnection) new URL(source.url).openConnection();
-            c.setInstanceFollowRedirects(true);
-            c.setConnectTimeout(20000);
-            c.setReadTimeout(60000);
-            if (c.getResponseCode() / 100 != 2) {
-                Log.w(TAG, "Download from " + source.url + " returned HTTP " + c.getResponseCode());
-                return null;
-            }
-            try (InputStream in = c.getInputStream()) {
-                return install(ctx, in, source.installId);
-            }
-        } catch (Exception e) {
-            Log.w(TAG, "Could not download " + source.url, e);
-            return null;
-        } finally {
-            if (c != null) c.disconnect();
         }
     }
 

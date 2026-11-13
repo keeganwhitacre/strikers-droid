@@ -6,7 +6,6 @@ import android.content.SharedPreferences;
 /** Stores Android app settings and their defaults. */
 final class GamePreferences {
 
-    // Keep the stored key names so upgrades retain existing settings.
     // Touch controls.
     static final String TOUCH_ACTION_LABELS = "touch_action_labels";
     static final String SETTINGS_SHORTCUT = "settings_shortcut";
@@ -14,15 +13,15 @@ final class GamePreferences {
     static final String TOUCH_STANDARD = "standard";
     static final String TOUCH_COMPACT = "compact";
     static final String TOUCH_TABLET = "tablet";
-    static final String SHOW_DPAD = "direcional";
+    static final String SHOW_DPAD = "show_dpad";
     static final String CSTICK = "cstick";
-    static final String TOUCH_OPACITY = "opacidade";  // Percent.
-    static final String TOUCH_SIZE = "tamanho";  // Percent.
-    static final String TOUCH_DEADZONE = "zona_morta";  // Percent.
+    static final String TOUCH_OPACITY = "touch_opacity";  // Percent.
+    static final String TOUCH_SIZE = "touch_size";  // Percent.
+    static final String TOUCH_DEADZONE = "touch_deadzone";  // Percent.
     static final String HUD = "hud";
 
     // App locale follows the system when its BCP 47 tag is empty.
-    static final String APP_LANGUAGE = "idioma_app";
+    static final String APP_LANGUAGE = "app_language";
 
     // Installed driver folder name. An empty value selects the system driver.
     static final String DRIVER = "driver";
@@ -32,6 +31,27 @@ final class GamePreferences {
 
     GamePreferences(Context ctx) {
         preferences = ctx.getSharedPreferences("strikers", Context.MODE_PRIVATE);
+        migrateLegacyKeys();
+    }
+
+    private void migrateLegacyKeys() {
+        String[] legacyKeys = {"direcional", "opacidade", "tamanho", "zona_morta", "idioma_app"};
+        String[] currentKeys = {SHOW_DPAD, TOUCH_OPACITY, TOUCH_SIZE, TOUCH_DEADZONE, APP_LANGUAGE};
+        java.util.Map<String, ?> stored = preferences.getAll();
+        SharedPreferences.Editor edit = null;
+        for (int i = 0; i < legacyKeys.length; i++) {
+            if (!stored.containsKey(legacyKeys[i])) continue;
+            if (edit == null) edit = preferences.edit();
+            String key = currentKeys[i];
+            Object value = stored.get(legacyKeys[i]);
+            if (!stored.containsKey(key)) {
+                if (value instanceof Boolean) edit.putBoolean(key, (Boolean) value);
+                else if (value instanceof Integer) edit.putInt(key, (Integer) value);
+                else if (value instanceof String) edit.putString(key, (String) value);
+            }
+            edit.remove(legacyKeys[i]);
+        }
+        if (edit != null) edit.apply();
     }
 
     boolean getBoolean(String key) {

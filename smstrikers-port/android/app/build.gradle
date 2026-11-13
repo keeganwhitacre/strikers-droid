@@ -7,6 +7,8 @@ def nativeBuildDir = providers.gradleProperty('strikers.nativeBuildDir').get()
 def sdlJavaDir = providers.gradleProperty('strikers.sdlJavaDir').get()
 def auroraJavaDir = providers.gradleProperty('strikers.auroraJavaDir').get()
 
+def releaseKeystore = providers.environmentVariable('STRIKERS_ANDROID_KEYSTORE')
+
 android {
     namespace 'io.github.newcoke.strikers'
     compileSdk 35
@@ -43,12 +45,23 @@ android {
         }
     }
 
+    signingConfigs {
+        if (releaseKeystore.isPresent()) {
+            distribution {
+                storeFile file(releaseKeystore.get())
+                storePassword providers.environmentVariable('STRIKERS_ANDROID_STORE_PASSWORD').get()
+                keyAlias providers.environmentVariable('STRIKERS_ANDROID_KEY_ALIAS').get()
+                keyPassword providers.environmentVariable('STRIKERS_ANDROID_KEY_PASSWORD').get()
+            }
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled false
             // The game is all native code; there is no Java worth shrinking, and R8 would only put
             // SDLActivity's reflected entry points at risk.
-            signingConfig signingConfigs.debug
+            signingConfig releaseKeystore.isPresent() ? signingConfigs.distribution : signingConfigs.debug
         }
         debug {
             // No applicationIdSuffix on purpose. The suffix would move the app's own folder on

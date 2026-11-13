@@ -31,11 +31,6 @@ public class DriverSettingsActivity extends NativeSettingsActivity {
         }
         PreferenceGroup add = section(screen, R.string.sec_add);
         row(add, R.string.import_zip, R.string.import_zip_sub, installing ? null : this::pickZip);
-        for (Drivers.Download source : Drivers.downloads(this)) {
-            row(add, source.name, source.description + "\n" + source.url,
-                    installing ? null : () -> install(null, source));
-        }
-        row(screen, R.string.video_driver, R.string.drivers_download_note, null);
         setPreferenceScreen(screen);
     }
 
@@ -88,18 +83,17 @@ public class DriverSettingsActivity extends NativeSettingsActivity {
     protected void onActivityResult(int request, int result, Intent data) {
         super.onActivityResult(request, result, data);
         if (request == PICK_ZIP && result == RESULT_OK && data != null && data.getData() != null) {
-            install(data.getData(), null);
+            install(data.getData());
         }
     }
 
-    private void install(Uri uri, Drivers.Download source) {
+    private void install(Uri uri) {
         if (installing) return;
         installing = true;
-        Toast.makeText(this, source == null ? getString(R.string.installing)
-                : getString(R.string.downloading, source.name), Toast.LENGTH_SHORT).show();
+        toast(R.string.installing);
         refresh();
         new Thread(() -> {
-            Drivers.Driver driver = uri == null ? Drivers.download(this, source) : Drivers.importZip(this, uri);
+            Drivers.Driver driver = Drivers.importZip(this, uri);
             if (driver != null) prefs.setString(GamePreferences.DRIVER, driver.id);
             runOnUiThread(() -> {
                 if (isDestroyed() || isFinishing()) return;
