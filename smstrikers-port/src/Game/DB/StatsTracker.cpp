@@ -1832,7 +1832,7 @@ void StatsTracker::TrackWinner(int forfeitSide)
                     human[side] = true;
             }
             if (human[0] && human[1])
-                PortCouchRecordResult({info->GetTeam(0), info->GetTeam(1), scoreLeft, scoreRight});
+                PortCouchRecordResult({info->GetTeam(0), info->GetTeam(1), scoreLeft, scoreRight, 0, 0});
         }
 #endif
         if (nlSingleton<GameInfoManager>::Instance()->IsInCupOrTournamentMode())

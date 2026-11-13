@@ -43,7 +43,7 @@ bool ClearMatchHUD()
 
 float HUDTextSize()
 {
-    return std::clamp(ImGui::GetIO().DisplaySize.y * 0.032f, 14.0f, 64.0f);
+    return std::max(14.0f, std::min(64.0f, ImGui::GetIO().DisplaySize.y * 0.032f));
 }
 
 void DrawHUDBadge(ImVec2 center, const char* text, ImU32 accent, float opacity = 1.0f)
@@ -56,8 +56,8 @@ void DrawHUDBadge(ImVec2 center, const char* text, ImU32 accent, float opacity =
     const ImVec2 display = ImGui::GetIO().DisplaySize;
     const float halfWidth = textSize.x * 0.5f + pad;
     const float halfHeight = textSize.y * 0.5f + pad * 0.5f;
-    center.x = std::clamp(center.x, halfWidth, std::max(halfWidth, display.x - halfWidth));
-    center.y = std::clamp(center.y, halfHeight, std::max(halfHeight, display.y - halfHeight));
+    center.x = std::max(halfWidth, std::min(center.x, display.x - halfWidth));
+    center.y = std::max(halfHeight, std::min(center.y, display.y - halfHeight));
     const ImVec2 first(center.x - halfWidth, center.y - halfHeight);
     const ImVec2 last(center.x + halfWidth, center.y + halfHeight);
     const int alpha = static_cast<int>(opacity * 255.0f);
