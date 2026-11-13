@@ -71,8 +71,14 @@ public class OverlayView extends View {
 
     private static native boolean nativeMatchActive();
     private static native boolean nativeBindings(int[] output);
-    private final int[] resolved = new int[18];
-    private final int[] nextBindings = new int[18];
+    // Mirrors the binding snapshot in touch.cpp. Button slots use TouchGamepad bit order.
+    private static final int LEFT_TRIGGER_BINDING = 14;
+    private static final int RIGHT_TRIGGER_BINDING = 15;
+    private static final int LEFT_STICK_BINDING = 16;
+    private static final int RIGHT_STICK_BINDING = 17;
+    private static final int BINDING_COUNT = 18;
+    private final int[] resolved = new int[BINDING_COUNT];
+    private final int[] nextBindings = new int[BINDING_COUNT];
     private boolean hasResolvedBindings;
     private static final int[] PAD_BITS = {0x100, 0x200, 0x400, 0x800, 0x10, 0x1000,
             0x40, 0x20, 0x8, 0x4, 0x1, 0x2};
@@ -318,7 +324,7 @@ public class OverlayView extends View {
             case STICK:
             case C_STICK:
                 if (hasResolvedBindings) {
-                    int index = control.role == Role.STICK ? 16 : 17;
+                    int index = control.role == Role.STICK ? LEFT_STICK_BINDING : RIGHT_STICK_BINDING;
                     control.label = resolved[index] == 1 ? "C" : "LS";
                     return;
                 }
@@ -349,8 +355,8 @@ public class OverlayView extends View {
                 break;
             default: return;
         }
-        int resolvedIndex = control.role == Role.LEFT_TRIGGER ? 14
-                : control.role == Role.RIGHT_TRIGGER ? 15
+        int resolvedIndex = control.role == Role.LEFT_TRIGGER ? LEFT_TRIGGER_BINDING
+                : control.role == Role.RIGHT_TRIGGER ? RIGHT_TRIGGER_BINDING
                 : Integer.numberOfTrailingZeros(control.buttonMask);
         StringBuilder assigned = new StringBuilder();
         for (int i = 0; i < PAD_KEYS.length; i++) {
