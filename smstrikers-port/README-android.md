@@ -89,6 +89,14 @@ and press the bottom, right, left, or top face button to claim P1, P2, P3, or
 P4 respectively. An occupied port swaps controllers. After a swap, choose
 teams and ready up again.
 
+## Vulkan drivers
+
+The system Vulkan driver is the default. On compatible Adreno devices, download
+a suitable ZIP from [AdrenoToolsDrivers](https://github.com/K11MCH1/AdrenoToolsDrivers/releases)
+and choose **Settings → Video → Video driver → Import ZIP**. Imported drivers run
+native code inside the game. Existing installed drivers and selections carry
+forward on upgrade, including the legacy `turnip-26.0-geral` folder ID.
+
 ## Texture packs
 
 Open **Settings → Video → Texture packs** and import a Dolphin-format ZIP with PNG or DDS
@@ -114,6 +122,17 @@ together. Japanese copies match other Japanese copies.
 
 - **Discord Rich Presence and Discord invites.** The upstream integration uses desktop IPC.
 - **The desktop settings app.** Android has its own launcher settings.
+
+## Distribution signing
+
+CI artifacts use debug signing. To build with a maintainer-owned key, set
+`STRIKERS_ANDROID_KEYSTORE` to the absolute keystore path and provide
+`STRIKERS_ANDROID_STORE_PASSWORD`, `STRIKERS_ANDROID_KEY_ALIAS`, and
+`STRIKERS_ANDROID_KEY_PASSWORD` in the environment before running
+`assembleRelease`. Keep the key outside the repository and back it up.
+Use the same key for subsequent distributed builds and verify an in-place
+upgrade before publishing. A debug-signed installation needs a backup and
+reinstall when moving to a differently signed APK.
 
 ## Device testing
 
