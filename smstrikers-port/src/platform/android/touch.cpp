@@ -89,7 +89,12 @@ constexpr SDL_GamepadButton kButtons[] = {
     SDL_GAMEPAD_BUTTON_DPAD_RIGHT, SDL_GAMEPAD_BUTTON_LEFT_SHOULDER,
     SDL_GAMEPAD_BUTTON_LEFT_STICK, SDL_GAMEPAD_BUTTON_RIGHT_STICK, SDL_GAMEPAD_BUTTON_BACK,
 };
-constexpr int kBindingCount = 18;
+// JNI snapshot used by OverlayView. Button slots follow TouchGamepad bit order.
+constexpr int kLeftTriggerBinding = sizeof kButtons / sizeof kButtons[0];
+constexpr int kRightTriggerBinding = kLeftTriggerBinding + 1;
+constexpr int kLeftStickBinding = kRightTriggerBinding + 1;
+constexpr int kRightStickBinding = kLeftStickBinding + 1;
+constexpr int kBindingCount = kRightStickBinding + 1;
 std::mutex s_bindingMutex;
 jint s_bindings[kBindingCount]{-1};
 std::atomic<bool> s_bindingsRequested{false};
@@ -127,9 +132,9 @@ void publish_bindings()
                 {
                     const int bit = axis.padAxis == PAD_AXIS_TRIGGER_L ? PAD_TRIGGER_L : PAD_TRIGGER_R;
                     if (source == SDL_GAMEPAD_AXIS_LEFT_TRIGGER)
-                        bindings[14] |= bit;
+                        bindings[kLeftTriggerBinding] |= bit;
                     if (source == SDL_GAMEPAD_AXIS_RIGHT_TRIGGER)
-                        bindings[15] |= bit;
+                        bindings[kRightTriggerBinding] |= bit;
                     if (source == -1)
                         for (unsigned n = 0; n < sizeof kButtons / sizeof kButtons[0]; ++n)
                             if (axis.nativeButton == (int)kButtons[n])
@@ -137,8 +142,8 @@ void publish_bindings()
                 }
                 if (axis.padAxis == PAD_AXIS_RIGHT_X_POS)
                 {
-                    if (source == SDL_GAMEPAD_AXIS_LEFTX) bindings[16] = 1;
-                    if (source == SDL_GAMEPAD_AXIS_RIGHTX) bindings[17] = 1;
+                    if (source == SDL_GAMEPAD_AXIS_LEFTX) bindings[kLeftStickBinding] = 1;
+                    if (source == SDL_GAMEPAD_AXIS_RIGHTX) bindings[kRightStickBinding] = 1;
                 }
             }
         break;

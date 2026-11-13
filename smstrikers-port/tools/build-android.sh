@@ -55,6 +55,8 @@ SYMBOLS=$(llvm-nm --dynamic --defined-only --format=posix "$LIB" | cut -d ' ' -f
 for SYMBOL in SDL_main \
     Java_io_github_newcoke_strikers_TouchGamepad_sendNative \
     Java_io_github_newcoke_strikers_TouchGamepad_nativeIsActive \
+    Java_io_github_newcoke_strikers_OverlayView_nativeBindings \
+    Java_io_github_newcoke_strikers_OverlayView_nativeMatchActive \
     Java_io_github_newcoke_strikers_FrameMetrics_readNative; do
     if ! printf '%s\n' "$SYMBOLS" | grep -Fx "$SYMBOL" >/dev/null; then
         echo "Missing Android entry point: $SYMBOL" >&2
