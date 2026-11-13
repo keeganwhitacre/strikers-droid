@@ -22,6 +22,7 @@
 
 #if defined(__ANDROID__) && defined(PORT_USE_AURORA)
 #include "Game/FE/feManager.h"
+#include "Game/FE/feHelpFuncs.h"
 #include "port/online_panel.h"
 
 #include <algorithm>
@@ -62,7 +63,7 @@ void DrawHUDBadge(ImVec2 center, const char* text, ImU32 accent, float opacity =
     const int alpha = static_cast<int>(opacity * 255.0f);
     const ImU32 edge = (accent & ~IM_COL32_A_MASK) | (static_cast<ImU32>(alpha) << IM_COL32_A_SHIFT);
     draw->AddRectFilled(first, last, IM_COL32(10, 18, 28, alpha * 9 / 10), pad);
-    draw->AddRect(first, last, edge, pad, 0, 2.0f);
+    draw->AddRect(first, last, edge, pad, 0, std::max(2.0f, size * 0.12f));
     draw->AddText(font, size, ImVec2(center.x - textSize.x * 0.5f, center.y - textSize.y * 0.5f),
                   IM_COL32(255, 255, 255, alpha), text);
 }
@@ -70,11 +71,13 @@ void DrawHUDBadge(ImVec2 center, const char* text, ImU32 accent, float opacity =
 void DrawPlayerBadge(cPlayer* player, float x, float y, float opacity)
 {
     char label[8];
-    std::snprintf(label, sizeof label, "P%d", player->GetGlobalPad()->m_padIndex + 1);
+    const int port = player->GetGlobalPad()->m_padIndex;
+    std::snprintf(label, sizeof label, "P%d", port + 1);
+    const auto& color = PAD_COLOURS[port];
     const ImVec2 display = ImGui::GetIO().DisplaySize;
     const ImVec2 center(x * display.x / glGetOrthographicWidth(),
                         y * display.y / glGetOrthographicHeight());
-    DrawHUDBadge(center, label, IM_COL32(255, 206, 94, 255), opacity);
+    DrawHUDBadge(center, label, IM_COL32(color[0], color[1], color[2], 255), opacity);
 }
 
 } // namespace
