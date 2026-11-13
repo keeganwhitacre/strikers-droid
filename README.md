@@ -1,82 +1,33 @@
-# Strikers - A native multi-platform port of Super Mario Strikers
+# Strikers for Android
 
-**Download:**&nbsp;&nbsp;
-[![Download for Android](https://img.shields.io/badge/Android-3DDC84?style=for-the-badge)](smstrikers-port/README-android.md)
-[![Download for Windows](https://img.shields.io/badge/Windows-0078D6?style=for-the-badge)](https://github.com/new-coke/strikers/releases/latest/download/strikers-windows-x86_64.zip)
-[![Download for macOS](https://img.shields.io/badge/macOS-6E6E73?style=for-the-badge)](https://github.com/new-coke/strikers/releases/latest/download/strikers-macos-arm64.tar.gz)
-[![Download for Linux x86-64](https://img.shields.io/badge/Linux_x86--64-FCC624?style=for-the-badge)](https://github.com/new-coke/strikers/releases/latest/download/strikers-linux-x86_64.tar.gz)
-[![Download for Linux arm64](https://img.shields.io/badge/Linux_arm64-FCC624?style=for-the-badge)](https://github.com/new-coke/strikers/releases/latest/download/strikers-linux-arm64.tar.gz)
-[![Download for Steam Deck](https://img.shields.io/badge/Steam_Deck-1A9FFF?style=for-the-badge)](https://github.com/new-coke/strikers/releases/latest/download/strikers-linux-x86_64.tar.gz)
-[![Download for Nintendo Switch](https://img.shields.io/badge/Nintendo_Switch-E60012?style=for-the-badge)](https://github.com/new-coke/strikers/releases/latest/download/strikers-switch.zip)
+A native Android port of *Super Mario Strikers* for phones, tablets, and handhelds. Play with touch controls or connect controllers for local multiplayer. You’ll need game data from your own copy of *Super Mario Strikers*.
 
-*Requires game data from your own copy of Super Mario Strikers. No game assets are included.*
+## Get the Android build
 
-Super Mario Strikers, rebuilt to run natively on Windows, Linux, macOS and Nintendo Switch, with modern display support, online multiplayer and a focus on performance across both powerful and low-power hardware.
+Use an ARM64 device running Android 9 or newer with Vulkan support. Open a successful **Android APK** run for `main` and download **strikers.apk** under **Artifacts**. GitHub requires sign-in to download CI artifacts. The [Android guide](smstrikers-port/README-android.md) covers installation, disc setup, building from source, and device testing.
 
-Built on the community decompilation by the excellent [Yannick Suter](https://github.com/yannicksuter), this project brings the original game to modern systems while preserving the original gameplay and visual style.
+[Android APK builds](https://github.com/keeganwhitacre/strikers-droid/actions/workflows/android.yml?query=branch%3Amain)
 
 ## Features
 
-- High framerate support with configurable frame limits and VSync.
-- Online play on a local network or over the internet, with rollback netcode ([guide](https://github.com/new-coke/strikers/wiki/Online)). The host's router opens the room's port if it supports UPnP, and friends can join from the host's Discord profile. Where the port can't be opened, [Tailscale](https://tailscale.com) or [ZeroTier](https://www.zerotier.com) are good to still reach the room. 
-- Widescreen and ultrawide support, with an expanded view of the pitch and corrected aspect ratios.
-- Higher-resolution rendering with adjustable internal resolution, 4x MSAA and up to 16x anisotropic filtering.
-- Texture packs ([guide](https://github.com/new-coke/strikers/wiki/Texture-packs)).
-- Modern graphics backends through Metal, Vulkan and Direct3D 12 via [Aurora](https://github.com/encounter/aurora), with experimental OpenGL and OpenGL ES options on Linux. Vulkan is personally recommended on non-macOS systems. 
-- Controller support for Xbox, PlayStation, Switch Pro and compatible GameCube adapters through SDL.
-- Button prompts follow the active keyboard or controller and its bindings with selectable controller artwork.
-- Customisable controls, including keyboard and gamepad bindings, stick deadzones and rumble.
-- Faster loading compared with original hardware.
-- Direct disc-image loading from ISO/GCM, CISO and GCZ files, alongside extracted game folders.
-- US, European and Japanese game support in one executable, with region-aware saves and language handling. The Japanese disc supports Japanese, English, German, French, Spanish and Italian.
-- A dedicated settings app for configuring graphics, controls, audio and game-data location. Some basic localisation included to help.
-- Discord Rich Presence, on by default.
+- **Android launcher and settings.** Pick a disc image with the Android file picker. The launcher remembers your selection.
+- **Touch controls and gamepads.** Move and resize touch buttons, remap GameCube controls, and tune stick deadzones and rumble. The touch overlay hides when a physical controller connects.
+- **Local multiplayer.** Identify connected controllers and swap player ports on the Choose Sides screen.
+- **Graphics and performance.** Adjust resolution, frame rate, and anti-aliasing, or use a performance preset. Import Dolphin-format texture packs and use a custom Vulkan driver on supported devices.
+- **Online multiplayer.** Host or join rollback matches, discover rooms on your local network, or connect by address. Cross-platform matches require a matching upstream game version and compatible disc region.
 
-## Installation
+## Where it came from
 
-Download your platform's archive above or from [Releases](https://github.com/new-coke/strikers/releases), then follow its page on the [wiki](https://github.com/new-coke/strikers/wiki):
+This fork brings [new-coke’s Strikers port](https://github.com/new-coke/strikers) to Android using [Luis Santos’s Android port](https://github.com/luisxl15/Strikers-Android-Port) as its starting point. The game is based on the community decompilation led by [Yannick Suter](https://github.com/yannicksuter) and uses [Aurora](https://github.com/encounter/aurora) for platform support.
 
-- [Windows](https://github.com/new-coke/strikers/wiki/Windows)
-- [macOS](https://github.com/new-coke/strikers/wiki/macOS)
-- [Linux](https://github.com/new-coke/strikers/wiki/Linux), as an archive or an AppImage
-- [Steam Deck](https://github.com/new-coke/strikers/wiki/Steam-Deck)
-- [Nintendo Switch](https://github.com/new-coke/strikers/wiki/Nintendo-Switch)
+Report Android issues in the [fork’s issue tracker](https://github.com/keeganwhitacre/strikers-droid/issues). Include your device, Android version, APK build, and steps to reproduce.
 
-The wiki also lists the supported discs and how to report a problem. [Troubleshooting](https://github.com/new-coke/strikers/wiki/Troubleshooting) covers issues you may have playing or installing the game.
-
-This fork provides an [Android build](smstrikers-port/README-android.md) for ARM64 devices. See the Android guide for the APK, setup, and device testing.
-
-## Roadmap
-
-The [roadmap board](https://miro.com/app/board/uXjVEelphdQ=/?share_link_id=275053969981 ) lists planned features and how far along each one is.
-
-## Building from source
-
-[Development](https://github.com/new-coke/strikers/wiki/Development) on the wiki covers building, running from a checkout and debugging:
-
-- [Windows](https://github.com/new-coke/strikers/wiki/Development#windows)
-- [macOS](https://github.com/new-coke/strikers/wiki/Development#macos)
-- [Linux](https://github.com/new-coke/strikers/wiki/Development#linux-and-steam-deck)
-- [Steam Deck](https://github.com/new-coke/strikers/wiki/Development#linux-and-steam-deck)
-- [Nintendo Switch](https://github.com/new-coke/strikers/wiki/Development#nintendo-switch)
-- [Android](smstrikers-port/README-android.md)
-
-
-## Notes
-
-This has been a solo effort. I am releasing this on what is effectively a 'burner' GitHub account because I don't want it attached to my name for professional and legal reasons. I have not done this port for reasons of ego or notoriety. Mario Strikers is one of my favourite games and it's been a dream of mine to bring it to the PC platform without the pains of emulation. My goal is simply to have it running on Steam Deck or similar low-end hardware with as little power draw as possible and nice performance, as I play the original game on Steam Deck a lot and bring it to parties and such.
-
-[Yannick Suter](https://github.com/yannicksuter), who headed the decomp effort, and the other contributors deserve a ton of credit for the work that's gone into the mind-numbing process of decompilation. And of course, the team behind [Aurora](https://github.com/encounter/aurora), for making this kind of project as easy as possible, deserve endless respect.
-
-Thanks also to [devkitPro](https://devkitpro.org) and [switchbrew](https://switchbrew.org) for the Switch toolchain and libnx, [danfromtico](https://github.com/danfromtico) for NVK on Switch, and [Dolphin](https://dolphin-emu.org) for the texture pack format.
-
-Pull requests are welcome.
-
-## Licensing
+<details>
+<summary>Licensing and third-party notices</summary>
 
 This project contains material with different licences and rights statuses.
 
-My original porting code, tools and documentation are offered under CC0 1.0, except where otherwise noted, and only to the extent that I own the relevant rights. This does not relicense third-party material or grant rights to the original game.
+The upstream author’s original porting code, tools and documentation are offered under CC0 1.0, except where otherwise noted, and only to the extent that I own the relevant rights. This does not relicense third-party material or grant rights to the original game.
 
 The main distinctions are:
 
@@ -97,3 +48,5 @@ The main distinctions are:
 The project distributes source code and compiled releases. These do not include game assets; you must supply game data from your own copy. Distribution does not grant permission to reuse or redistribute third-party material beyond its applicable licences and rights.
 
 This is an unofficial project, unaffiliated with and not endorsed by Nintendo or Next Level Games.
+
+</details>
