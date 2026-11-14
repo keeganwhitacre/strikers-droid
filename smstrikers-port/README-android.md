@@ -104,6 +104,18 @@ and choose **Settings → Video → Video driver → Import ZIP**. Imported driv
 native code inside the game. Installed drivers and the selection persist across
 updates signed with the same key.
 
+## Stadium haze
+
+**Settings → Video → Stadium haze** adds distance haze to The Underground, Crater Field, Super
+Stadium and Bowser Stadium, so the far stands recede instead of looking as sharp as the pitch.
+It applies from the next match and does not affect online play. The other three stadiums keep
+the game's own fog.
+
+To tune a stadium's colour and distances live, add `overlay = menu` to `strikers.ini`, start a
+match there, and open the **Render** tab's **stadium haze** section. **Copy for strikers.ini**
+writes the values to the clipboard and to `strikers-log.txt`. The `haze_*` keys are listed in
+`strikers.ini.example`.
+
 ## Texture packs
 
 Open **Settings → Video → Texture packs** and import a Dolphin-format ZIP with PNG or DDS

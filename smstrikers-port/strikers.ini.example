@@ -19,6 +19,18 @@
 # Anisotropic texture filtering: 1, 2, 4, 8 or 16.
 # aniso = 16
 
+# Distance haze, so far stands recede as they would in air: off, subtle or strong. Off by default.
+# It replaces nothing in Pipeline Central, The Palace or Konga Coliseum, which have the game's own
+# fog, unless haze_all = 1. Rendering only; online opponents need not match.
+# stadium_haze = off
+# Overrides for tuning, applied to whichever stadium loads. The debug menu's Render tab (F1) edits
+# them live and copies the result.
+# haze_color = 96, 101, 146
+# haze_start = 40
+# haze_end = 360
+# haze_sky = 0
+# haze_all = 0
+
 # Frame rate cap in Hz, or 0 for unlimited.
 # fps_limit = 59.94
 
