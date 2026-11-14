@@ -139,6 +139,11 @@ public class SettingsActivity extends NativeSettingsActivity {
     }
 
     private void game(PreferenceGroup group) {
+        row(group, R.string.share_logs, R.string.share_logs_help, () -> {
+            Intent share = LogProvider.shareIntent(this);
+            if (share == null) toast(R.string.no_logs);
+            else startActivity(Intent.createChooser(share, getText(R.string.share_logs)));
+        });
         toggle(group, R.string.unlock_all, R.string.unlock_all_help, "unlock_all", true);
         toggle(group, R.string.hud, R.string.hud_help, GamePreferences.HUD, false);
         toggle(group, R.string.update_check, R.string.update_check_help,

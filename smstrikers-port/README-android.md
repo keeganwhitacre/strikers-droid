@@ -185,7 +185,8 @@ GPU and driver, disc region, and results in the release notes or test issue.
 | Graphics and textures | Play with the system Vulkan driver. If supported, test a custom driver and return to the system driver. Import a known texture pack, confirm a visible replacement, disable the pack, and confirm the original texture returns. |
 | Online | Play Android-to-Android and Android-to-desktop using builds of the same upstream version. Test discovery and direct connection, then complete a match and rematch. |
 
-For crashes or input problems, capture Android's log and the native game log:
+For crashes or input problems, **Settings → Share logs** sends the game log and the newest crash
+log through Android's share sheet. With a computer, capture Android's log and the native game log:
 
 ```sh
 adb logcat -s strikers SDL DEBUG AndroidRuntime
