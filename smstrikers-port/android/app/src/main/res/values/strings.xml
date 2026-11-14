@@ -134,4 +134,7 @@
     <string name="touch_pass">Pass</string>
     <string name="touch_lob">Lob</string>
     <string name="settings_shortcut">Settings shortcut (takes the selected stick click out of play)</string>
+    <string name="touch_style">Touch style</string>
+    <string name="touch_style_metal">Metal</string>
+    <string name="touch_style_classic">Classic</string>
 </resources>

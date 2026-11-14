@@ -19,6 +19,9 @@ final class GamePreferences {
     static final String TOUCH_SIZE = "touch_size";  // Percent.
     static final String TOUCH_DEADZONE = "touch_deadzone";  // Percent.
     static final String HUD = "hud";
+    static final String TOUCH_STYLE = "touch_style";
+    static final String TOUCH_STYLE_METAL = "metal";
+    static final String TOUCH_STYLE_CLASSIC = "classic";
 
     // App locale follows the system when its BCP 47 tag is empty.
     static final String APP_LANGUAGE = "app_language";
@@ -34,7 +37,8 @@ final class GamePreferences {
     }
 
     boolean getBoolean(String key) {
-        return preferences.getBoolean(key, false);
+        // Shoot, Pass and Lob on the buttons during a match, unless turned off.
+        return preferences.getBoolean(key, TOUCH_ACTION_LABELS.equals(key));
     }
 
     int getInt(String key) {
@@ -56,7 +60,9 @@ final class GamePreferences {
 
     String getString(String key) {
         // The layout names the file its control positions are saved in, so it needs a real default.
-        return preferences.getString(key, TOUCH_LAYOUT.equals(key) ? TOUCH_STANDARD : "");
+        final String fallback = TOUCH_LAYOUT.equals(key) ? TOUCH_STANDARD
+                : TOUCH_STYLE.equals(key) ? TOUCH_STYLE_METAL : "";
+        return preferences.getString(key, fallback);
     }
 
     void setString(String key, String value) {
