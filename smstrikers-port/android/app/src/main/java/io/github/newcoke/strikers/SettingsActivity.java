@@ -74,7 +74,7 @@ public class SettingsActivity extends NativeSettingsActivity {
                         getString(R.string.touch_tablet)},
                 new String[]{GamePreferences.TOUCH_STANDARD, GamePreferences.TOUCH_COMPACT,
                         GamePreferences.TOUCH_TABLET},
-                layout.isEmpty() ? GamePreferences.TOUCH_STANDARD : layout);
+                layout);
         layoutOption.setOnPreferenceChangeListener((item, value) -> {
             prefs.setString(GamePreferences.TOUCH_LAYOUT, value.toString());
             return true;

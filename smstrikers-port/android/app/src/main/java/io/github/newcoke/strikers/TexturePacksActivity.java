@@ -100,7 +100,7 @@ public class TexturePacksActivity extends NativeSettingsActivity {
         new Thread(() -> {
             String pack = null;
             try (InputStream input = getContentResolver().openInputStream(uri)) {
-                pack = TexturePacks.install(folder(), input, DiscSelection.displayName(this, uri));
+                pack = TexturePacks.install(folder(), input, Documents.displayName(this, uri, "Texture pack"));
             } catch (IOException | IllegalArgumentException | SecurityException error) {
                 Log.w("strikers", "Could not import texture pack", error);
             }

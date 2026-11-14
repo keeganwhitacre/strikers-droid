@@ -4,9 +4,7 @@ A native Android port of *Super Mario Strikers* for phones, tablets, and handhel
 
 ## Get the Android build
 
-Use an ARM64 device running Android 9 or newer with Vulkan support. Open a successful **Android APK** run for `main` and download **strikers.apk** under **Artifacts**. GitHub requires sign-in to download CI artifacts. The [Android guide](smstrikers-port/README-android.md) covers installation, disc setup, building from source, and device testing.
-
-[Android APK builds](https://github.com/keeganwhitacre/strikers-droid/actions/workflows/android.yml?query=branch%3Amain)
+Use an ARM64 device running Android 9 or newer with Vulkan support. Download the APK from [Releases](https://github.com/keeganwhitacre/strikers-droid/releases). Untested builds of every `main` commit are under [Android APK builds](https://github.com/keeganwhitacre/strikers-droid/actions/workflows/android.yml?query=branch%3Amain); GitHub requires sign-in to download them. The [Android guide](smstrikers-port/README-android.md) covers installation, disc setup, building from source, and device testing.
 
 ## Features
 

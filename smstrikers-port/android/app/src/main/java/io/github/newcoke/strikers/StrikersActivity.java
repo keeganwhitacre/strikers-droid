@@ -200,6 +200,7 @@ public class StrikersActivity extends SDLActivity {
     @Override
     protected void onDestroy() {
         handler.removeCallbacksAndMessages(null);
+        final boolean leaving = isFinishing();
         super.onDestroy();
         if (disc != null) {
             try {
@@ -208,5 +209,10 @@ public class StrikersActivity extends SDLActivity {
                 Log.w("strikers", "Could not close the disc", error);
             }
         }
+        // The game's native state, including the disc DVDInit opened, exists once per process,
+        // and SDL will not start a second game in it: the next onCreate calls System.exit(0),
+        // which closes the app instead of starting a match. End the process here instead, so the
+        // next Play starts a fresh one. Android restarts the launcher if it is on screen.
+        if (leaving) System.exit(0);
     }
 }
