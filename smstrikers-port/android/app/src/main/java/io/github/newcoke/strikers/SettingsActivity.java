@@ -68,6 +68,14 @@ public class SettingsActivity extends NativeSettingsActivity {
     }
 
     private void controls(PreferenceGroup group) {
+        ListPreference style = list(group, getText(R.string.touch_style),
+                new String[]{getString(R.string.touch_style_metal), getString(R.string.touch_style_classic)},
+                new String[]{GamePreferences.TOUCH_STYLE_METAL, GamePreferences.TOUCH_STYLE_CLASSIC},
+                prefs.getString(GamePreferences.TOUCH_STYLE));
+        style.setOnPreferenceChangeListener((item, value) -> {
+            prefs.setString(GamePreferences.TOUCH_STYLE, value.toString());
+            return true;
+        });
         String layout = prefs.getString(GamePreferences.TOUCH_LAYOUT);
         ListPreference layoutOption = list(group, getText(R.string.touch_layout),
                 new String[]{getString(R.string.touch_standard), getString(R.string.touch_compact),
