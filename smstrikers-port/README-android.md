@@ -10,9 +10,7 @@ and rollback code come from [Strikers upstream](https://github.com/new-coke/stri
 - Use data from your own US, European, or Japanese copy of Super Mario Strikers.
   The APK contains no game assets.
 - Download the APK from [Releases](https://github.com/keeganwhitacre/strikers-droid/releases),
-  or build it below. Untested builds of every `main` commit are under
-  [Android APK workflow runs](https://github.com/keeganwhitacre/strikers-droid/actions/workflows/android.yml?query=branch%3Amain)
-  as `strikers.apk`; those need a signed-in GitHub account and are debug-signed.
+  or build it below. To try unreleased changes, see [Test builds](#test-builds).
 
 The app appears as **Strikers** with the package ID `io.github.keeganwhitacre.strikers`.
 Android requires the same signing key for an in-place update, so a build from
@@ -24,6 +22,16 @@ and appear as a separate app. Copy `strikers.ini`, texture packs and any extract
 directory from that app's folder under `Android/data/` into the new one, then pick your disc
 image again. Memory card saves live in app-private storage and cannot be copied over; uninstall
 the old app once you no longer need it.
+
+## Test builds
+
+Every `main` commit and every pull request also builds `strikers-test.apk` under its
+[Android APK workflow run](https://github.com/keeganwhitacre/strikers-droid/actions/workflows/android.yml)
+(sign in, open the run, download it under **Artifacts**). It installs as a separate app,
+**Strikers Test** (`io.github.keeganwhitacre.strikers.test`), beside the released Strikers, with
+its own saves, settings and disc selection. Test builds share a key, so a newer one installs over
+an older one. Installing an older run over a newer one fails; uninstall Strikers Test first.
+Local builds are test builds too, unless Gradle gets `-Pstrikers.channel=release`.
 
 ## Build from source
 
