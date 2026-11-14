@@ -4,6 +4,7 @@
 #include "NL/gl/glState.h"
 #include "NL/gl/glPlat.h"
 #include "port/aspect.h"
+#include "port/haze.h"     // PORT: optional stadium haze
 #include "NL/gl/glConstant.h"
 #include "NL/gl/glFont.h"
 #include "NL/gl/glDraw2.h"
@@ -62,6 +63,14 @@ static u32 glx_FogType = 4;
 static bool glx_bFogSky = true;
 static f32 glx_FogStart = 5.f;
 static f32 glx_FogEnd = 160.f;
+// PORT: the haze's GXSetFog arguments for the view being drawn, for glx_Fog(true) to restore after a
+// material that draws without fog.
+static struct
+{
+    bool set;
+    f32 start, end, nearZ, farZ;
+    GXColor colour;
+} glx_HazeFog;
 static f32 glx_FogIntensity = 1.f;
 static GXColor glx_FogColour = { 0xFF, 0xFF, 0xFF, 0xFF };
 static s32 prev_VIWidth = 0x00000294;
@@ -364,7 +373,9 @@ static void glx_SendViews()
         fenceMetricPending = 0;
         do
         {
-            if (glx_bFog)
+            // PORT: the optional haze takes the place of the stadium's fog when it is on.
+            PortHaze* haze = PortHazeState();
+            if (glx_bFog || haze->active)
             {
                 switch (view)
                 {
@@ -375,7 +386,7 @@ static void glx_SendViews()
                     useFog = true;
                     break;
                 case 2:
-                    useFog = glx_bFogSky;
+                    useFog = haze->active ? haze->sky != 0 : glx_bFogSky;
                     break;
                 default:
                     useFog = false;
@@ -384,7 +395,37 @@ static void glx_SendViews()
 
                 if (useFog)
                 {
-                    GXSetFog((GXFogType)fogtype[glx_FogType], glx_FogStart, glx_FogEnd, 0.25f, 130.0f, glx_GetFogColour());
+                    if (haze->active)
+                    {
+                        // The view's own planes, not the retail 0.25 and 130, so that start and end
+                        // are true distances.
+                        glViewGetProjectionMatrix((eGLView)view, projection);
+                        f32 nearZ = 0.25f, farZ = 1024.0f;
+                        PortHazePlanes(projection.e2, &nearZ, &farZ);
+                        GXColor colour;
+                        colour.r = (u8)(haze->color[0] * 255.0f + 0.5f);
+                        colour.g = (u8)(haze->color[1] * 255.0f + 0.5f);
+                        colour.b = (u8)(haze->color[2] * 255.0f + 0.5f);
+                        colour.a = 255;
+                        GXSetFog(GX_FOG_PERSP_LIN, haze->start, haze->end, nearZ, farZ, colour);
+                        glx_HazeFog.set = true;
+                        glx_HazeFog.start = haze->start;
+                        glx_HazeFog.end = haze->end;
+                        glx_HazeFog.nearZ = nearZ;
+                        glx_HazeFog.farZ = farZ;
+                        glx_HazeFog.colour = colour;
+                        if (!haze->logged)
+                        {
+                            haze->logged = 1;
+                            OSReport("[port] haze: drawing in view %d, planes %.3f to %.1f, %.0f to %.0f\n",
+                                     (int)view, (double)nearZ, (double)farZ, (double)haze->start,
+                                     (double)haze->end);
+                        }
+                    }
+                    else
+                    {
+                        GXSetFog((GXFogType)fogtype[glx_FogType], glx_FogStart, glx_FogEnd, 0.25f, 130.0f, glx_GetFogColour());
+                    }
 
                     if (glx_bFogAdjust)
                     {
@@ -497,6 +538,13 @@ static void glx_SendViews()
  */
 void glx_Fog(bool enable)
 {
+    // PORT: back to the haze, not the retail fog, after a material that draws without fog.
+    if (enable && PortHazeState()->active && glx_HazeFog.set)
+    {
+        GXSetFog(GX_FOG_PERSP_LIN, glx_HazeFog.start, glx_HazeFog.end, glx_HazeFog.nearZ,
+                 glx_HazeFog.farZ, glx_HazeFog.colour);
+        return;
+    }
     if (enable)
     {
         s32 r = (s32)(glx_FogIntensity * glx_FogColour.r);
@@ -520,7 +568,9 @@ void glx_Fog(bool enable)
  */
 bool glx_GetFog()
 {
-    return glx_bFog;
+    // PORT: so no-fog materials also skip the haze; the diagnostic haze covers them too.
+    const PortHaze* haze = PortHazeState();
+    return glx_bFog || (haze->active && !haze->diagnostic);
 }
 
 /**
@@ -887,6 +937,9 @@ void glx_SetFog(int type)
     if (type < 0)
     {
         glx_bFog = false;
+        // PORT: leaving the match ends the haze too, so the front end draws without it.
+        PortHazeState()->active = 0;
+        glx_HazeFog.set = false;
         return;
     }
 
