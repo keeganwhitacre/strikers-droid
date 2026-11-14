@@ -25,10 +25,13 @@
 # that it draws at all.
 # stadium_haze = off
 # Overrides for tuning, applied to whichever stadium loads. The debug menu's Render tab (F1) edits
-# them live and copies the result.
+# them live and copies the result. Distances are world units: the far touchline is 30 to 50 away.
+# haze_curve is linear, exp (the default: half strength an eighth of the way from start to end) or
+# exp2 (clear for longer, then closing in faster). strong is the values below; subtle ends at 600.
 # haze_color = 96, 101, 146
 # haze_start = 40
-# haze_end = 230
+# haze_end = 320
+# haze_curve = exp
 # haze_sky = 0
 
 # Frame rate cap in Hz, or 0 for unlimited.

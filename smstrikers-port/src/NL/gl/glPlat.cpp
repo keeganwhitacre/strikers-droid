@@ -68,6 +68,7 @@ static f32 glx_FogEnd = 160.f;
 static struct
 {
     bool set;
+    GXFogType type;
     f32 start, end, nearZ, farZ;
     GXColor colour;
 } glx_HazeFog;
@@ -98,6 +99,12 @@ static u32 fogtype[5] = { GX_FOG_PERSP_LIN, GX_FOG_PERSP_EXP, GX_FOG_PERSP_EXP2,
 static const GXColor glx_CopyClearColour = { 0, 0, 0, 0x40 };
 
 static void glx_SendViews();
+
+// PORT: the GX fog type for the haze's curve.
+static inline GXFogType glx_HazeFogType(int curve)
+{
+    return curve == PORT_HAZE_EXP ? GX_FOG_PERSP_EXP : curve == PORT_HAZE_EXP2 ? GX_FOG_PERSP_EXP2 : GX_FOG_PERSP_LIN;
+}
 
 // No-fog colour passed via a void helper so the by-value arg copy is an
 // inline-expansion temporary that grabs the lowest stack slot (0x18),
@@ -407,8 +414,10 @@ static void glx_SendViews()
                         colour.g = (u8)(haze->color[1] * 255.0f + 0.5f);
                         colour.b = (u8)(haze->color[2] * 255.0f + 0.5f);
                         colour.a = 255;
-                        GXSetFog(GX_FOG_PERSP_LIN, haze->start, haze->end, nearZ, farZ, colour);
+                        GXFogType type = glx_HazeFogType(haze->curve);
+                        GXSetFog(type, haze->start, haze->end, nearZ, farZ, colour);
                         glx_HazeFog.set = true;
+                        glx_HazeFog.type = type;
                         glx_HazeFog.start = haze->start;
                         glx_HazeFog.end = haze->end;
                         glx_HazeFog.nearZ = nearZ;
@@ -417,9 +426,9 @@ static void glx_SendViews()
                         if (!haze->logged)
                         {
                             haze->logged = 1;
-                            OSReport("[port] haze: drawing in view %d, planes %.3f to %.1f, %.0f to %.0f\n",
-                                     (int)view, (double)nearZ, (double)farZ, (double)haze->start,
-                                     (double)haze->end);
+                            OSReport("[port] haze: drawing in view %d, planes %.3f to %.1f, %s %.0f to %.0f\n",
+                                     (int)view, (double)nearZ, (double)farZ, PortHazeCurveName(haze->curve),
+                                     (double)haze->start, (double)haze->end);
                         }
                     }
                     else
@@ -541,7 +550,7 @@ void glx_Fog(bool enable)
     // PORT: back to the haze, not the retail fog, after a material that draws without fog.
     if (enable && PortHazeState()->active && glx_HazeFog.set)
     {
-        GXSetFog(GX_FOG_PERSP_LIN, glx_HazeFog.start, glx_HazeFog.end, glx_HazeFog.nearZ,
+        GXSetFog(glx_HazeFog.type, glx_HazeFog.start, glx_HazeFog.end, glx_HazeFog.nearZ,
                  glx_HazeFog.farZ, glx_HazeFog.colour);
         return;
     }
