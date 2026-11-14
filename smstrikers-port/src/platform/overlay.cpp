@@ -8,6 +8,7 @@
 #include "port/benchmark.h"
 #include "port/config.h"
 #include "port/framerate.h"
+#include "port/haze.h"
 #include "port/host.h"
 #include "port/input.h"
 #include "port/launch.h"
@@ -1286,6 +1287,48 @@ void draw_render_tab()
     ImGui::SameLine();
     if (ImGui::Checkbox("hide skybox", &s_skyboxOff))
         cmd(PDBG_SET_CLASS_FLAG, PDBG_CF_SKYBOX_OFF, s_skyboxOff ? 1 : 0);
+
+    ImGui::SeparatorText("stadium haze");
+    {
+        PortHaze* haze = PortHazeState();
+        bool on = haze->active != 0;
+        if (ImGui::Checkbox("haze", &on))
+        {
+            // Turned on by hand in a stadium the setting left alone: start from something visible.
+            if (on && haze->end <= haze->start)
+            {
+                haze->color[0] = haze->color[1] = haze->color[2] = 0.6f;
+                haze->start = 40.0f;
+                haze->end = 230.0f;
+            }
+            haze->active = on ? 1 : 0;
+        }
+        help("Applies from the next frame and lasts until the match ends. stadium_haze in "
+             "strikers.ini turns it on at the start of every match.");
+        ImGui::BeginDisabled(!on);
+        ImGui::ColorEdit3("colour", haze->color);
+        ImGui::SliderFloat("start", &haze->start, 0.0f, 400.0f, "%.0f");
+        ImGui::SliderFloat("end", &haze->end, 1.0f, 1200.0f, "%.0f");
+        if (haze->end <= haze->start)
+            haze->end = haze->start + 1.0f;
+        bool sky = haze->sky != 0;
+        if (ImGui::Checkbox("skybox too", &sky))
+            haze->sky = sky ? 1 : 0;
+        char lines[192];
+        std::snprintf(lines, sizeof lines,
+                      "haze_color = %d, %d, %d\nhaze_start = %.0f\nhaze_end = %.0f\nhaze_sky = %d\n",
+                      (int)(haze->color[0] * 255.0f + 0.5f), (int)(haze->color[1] * 255.0f + 0.5f),
+                      (int)(haze->color[2] * 255.0f + 0.5f), (double)haze->start,
+                      (double)haze->end, haze->sky);
+        ImGui::TextUnformatted(lines);
+        if (ImGui::Button("copy for strikers.ini"))
+        {
+            ImGui::SetClipboardText(lines);
+            std::fprintf(stderr, "[port] haze for %s:\n%s", s_stadium, lines);
+        }
+        help("Copies these lines and writes them to the log, with the stadium's name.");
+        ImGui::EndDisabled();
+    }
 
     ImGui::SeparatorText("lighting and texture stages");
     ImGui::Checkbox("lighting", &g_bAllowLighting);
