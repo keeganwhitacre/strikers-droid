@@ -1299,7 +1299,8 @@ void draw_render_tab()
             {
                 haze->color[0] = haze->color[1] = haze->color[2] = 0.6f;
                 haze->start = 40.0f;
-                haze->end = 230.0f;
+                haze->end = 320.0f;
+                haze->curve = PORT_HAZE_EXP;
             }
             haze->active = on ? 1 : 0;
         }
@@ -1311,15 +1312,24 @@ void draw_render_tab()
         ImGui::SliderFloat("end", &haze->end, 1.0f, 1200.0f, "%.0f");
         if (haze->end <= haze->start)
             haze->end = haze->start + 1.0f;
+        ImGui::Combo("curve", &haze->curve, "linear\0exp\0exp2\0");
+        if (haze->curve == PORT_HAZE_EXP)
+            ImGui::Text("half strength at %.0f",
+                        (double)(haze->start + (haze->end - haze->start) / 8.0f));
+        help("exp is half strength an eighth of the way from start to end and nearly total by "
+             "half way. exp2 stays clear longer, then closes in faster. linear rises evenly to "
+             "total at end.");
         bool sky = haze->sky != 0;
         if (ImGui::Checkbox("skybox too", &sky))
             haze->sky = sky ? 1 : 0;
-        char lines[192];
-        std::snprintf(lines, sizeof lines,
-                      "haze_color = %d, %d, %d\nhaze_start = %.0f\nhaze_end = %.0f\nhaze_sky = %d\n",
-                      (int)(haze->color[0] * 255.0f + 0.5f), (int)(haze->color[1] * 255.0f + 0.5f),
-                      (int)(haze->color[2] * 255.0f + 0.5f), (double)haze->start,
-                      (double)haze->end, haze->sky);
+        char lines[224];
+        std::snprintf(
+            lines, sizeof lines,
+            "haze_color = %d, %d, %d\nhaze_start = %.0f\nhaze_end = %.0f\nhaze_curve = %s\n"
+            "haze_sky = %d\n",
+            (int)(haze->color[0] * 255.0f + 0.5f), (int)(haze->color[1] * 255.0f + 0.5f),
+            (int)(haze->color[2] * 255.0f + 0.5f), (double)haze->start, (double)haze->end,
+            PortHazeCurveName(haze->curve), haze->sky);
         ImGui::TextUnformatted(lines);
         if (ImGui::Button("copy for strikers.ini"))
         {

@@ -109,7 +109,8 @@ updates signed with the same key.
 ## Stadium haze
 
 **Settings → Video → Stadium haze** adds distance haze to every stadium, so the far stands recede
-instead of looking as sharp as the pitch. In Pipeline Central, The Palace and Konga Coliseum it
+instead of looking as sharp as the pitch. The pitch stays clear; Strong is half strength in the
+middle of the far stands, Subtle further out. In Pipeline Central, The Palace and Konga Coliseum it
 replaces the game's own fog, in that fog's colour. It applies from the next match and does not
 affect online play. The test app also offers **Diagnostic (magenta)**, which turns everything past
 a few metres magenta in every stadium: if that shows, the haze reaches the screen and only needs

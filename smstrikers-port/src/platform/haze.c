@@ -6,6 +6,7 @@
 //   haze_color   = r, g, b                 (0-255; overrides the stadium's default)
 //   haze_start   = distance
 //   haze_end     = distance
+//   haze_curve   = linear | exp | exp2
 //   haze_sky     = 0 | 1
 // The three stadiums with retail fog get the haze in their retail fog's colour instead.
 // The overrides apply to whichever stadium is loaded, which is what tuning one stadium needs.
@@ -37,19 +38,34 @@ static const HazeDefault kDefaults[] = {
     { "forbidden_dome", 112, 64, 54 },      // Bowser Stadium
 };
 
-// Where the haze begins, and how far beyond that it would reach full strength, per level, as
-// tuned on a device: subtle is what first shipped as strong, and strong goes a step further.
+// Distances are in world units. The gameplay camera sits 20 (near zoom) to 35 (far zoom) units from
+// the point it looks at, and the pitch is about 23 units deep, so the far touchline is roughly 32
+// to 47 units away and the far stands begin just beyond it. Starting at 40 keeps the pitch clear at
+// near zoom and only lightly touched at far zoom.
+//
+// The curve is exp rather than linear. Linear fog spread over the stands (it last ran 40 to 180)
+// stays faint there, and shortening it to fix that makes everything past its end solid colour,
+// which flattens the background against the unhazed sky. exp rises quickly just past the start and
+// then approaches full strength gradually, so the stands thin out while distant shapes keep some
+// contrast. GX has no fog type that stops short of full strength.
+//
+// Each level is given by the distance past the start where the haze is half strength: it is about
+// 30% at half that, 75% at twice it and 94% at four times it, as 1 - 2^(-distance / half). End is
+// eight half-distances past the start. Strong is half strength at 75 units, the middle of the far
+// stands; subtle at 110, about as strong in the stands as linear strong was.
 static const float kStart = 40.0f;
-static const float kSpanSubtle = 190.0f;
-static const float kSpanStrong = 140.0f;
+static const float kHalfSubtle = 70.0f;
+static const float kHalfStrong = 35.0f;
+static const int kCurve = PORT_HAZE_EXP;
 
 static PortHaze s_haze;
 
 // The haze keys as strikers.ini has them now. The config loader exported the file to the
 // environment once, at startup; this re-reads just these keys so later edits count.
 #define HAZE_KEYS 7
-static const char* const kKeys[HAZE_KEYS] = { "stadium_haze", "haze_color", "haze_start", "haze_end",
-                                             "haze_sky", NULL, NULL };
+static const char* const kKeys[HAZE_KEYS] = {
+    "stadium_haze", "haze_color", "haze_start", "haze_end", "haze_sky", "haze_curve", NULL
+};
 static char s_values[HAZE_KEYS][64];
 static int s_found[HAZE_KEYS];
 
@@ -152,6 +168,31 @@ static void read_float(const char* name, float* out)
         fprintf(stderr, "[port] haze: %s = %s is not a distance\n", name, v);
 }
 
+static void read_curve(int* out)
+{
+    const char* v = setting("haze_curve");
+    if (v == NULL)
+        return;
+    if (strcmp(v, "linear") == 0)
+        *out = PORT_HAZE_LINEAR;
+    else if (strcmp(v, "exp") == 0)
+        *out = PORT_HAZE_EXP;
+    else if (strcmp(v, "exp2") == 0)
+        *out = PORT_HAZE_EXP2;
+    else
+        fprintf(stderr, "[port] haze: haze_curve = %s is not linear, exp or exp2\n", v);
+}
+
+const char* PortHazeCurveName(int curve)
+{
+    switch (curve)
+    {
+    case PORT_HAZE_EXP:  return "exp";
+    case PORT_HAZE_EXP2: return "exp2";
+    default:             return "linear";
+    }
+}
+
 void PortHazeSelectStadium(const char* baseName)
 {
     const HazeDefault* d = NULL;
@@ -193,6 +234,7 @@ void PortHazeSelectStadium(const char* baseName)
         s_haze.color[2] = 1.0f;
         s_haze.start = 0.0f;
         s_haze.end = 120.0f;
+        s_haze.curve = PORT_HAZE_LINEAR;   // as proven on a device; the tuned levels use kCurve
         s_haze.sky = 1;
         fprintf(stderr, "[port] haze: diagnostic magenta for %s\n", baseName);
         return;
@@ -203,7 +245,8 @@ void PortHazeSelectStadium(const char* baseName)
     s_haze.color[1] = d->g / 255.0f;
     s_haze.color[2] = d->b / 255.0f;
     s_haze.start = kStart;
-    s_haze.end = kStart + (lvl == 2 ? kSpanStrong : kSpanSubtle);
+    s_haze.end = kStart + 8.0f * (lvl == 2 ? kHalfStrong : kHalfSubtle);
+    s_haze.curve = kCurve;
     s_haze.sky = 0;
 
     color = setting("haze_color");
@@ -223,15 +266,16 @@ void PortHazeSelectStadium(const char* baseName)
     }
     read_float("haze_start", &s_haze.start);
     read_float("haze_end", &s_haze.end);
+    read_curve(&s_haze.curve);
     if (setting("haze_sky") != NULL)
         s_haze.sky = strcmp(setting("haze_sky"), "0") != 0;
     if (s_haze.end <= s_haze.start)
         s_haze.end = s_haze.start + 1.0f;
 
-    fprintf(stderr, "[port] haze: %s, colour %d,%d,%d, %.0f to %.0f%s\n", baseName,
+    fprintf(stderr, "[port] haze: %s, colour %d,%d,%d, %s %.0f to %.0f%s\n", baseName,
             (int)(s_haze.color[0] * 255.0f + 0.5f), (int)(s_haze.color[1] * 255.0f + 0.5f),
-            (int)(s_haze.color[2] * 255.0f + 0.5f), (double)s_haze.start, (double)s_haze.end,
-            s_haze.sky ? ", sky too" : "");
+            (int)(s_haze.color[2] * 255.0f + 0.5f), PortHazeCurveName(s_haze.curve),
+            (double)s_haze.start, (double)s_haze.end, s_haze.sky ? ", sky too" : "");
 }
 
 PortHaze* PortHazeState(void)
