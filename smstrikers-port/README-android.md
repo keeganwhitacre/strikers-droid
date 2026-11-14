@@ -17,12 +17,6 @@ Android requires the same signing key for an in-place update, so a build from
 [Releases](https://github.com/keewhi/strikers-droid/releases) updates only
 another release build. Test builds are a separate app; see [Test builds](#test-builds).
 
-Earlier builds, including release 2.0.0-android.1, installed under other package IDs and appear
-as a separate app. Copy `strikers.ini`, texture packs and any extracted `files`
-directory from that app's folder under `Android/data/` into the new one, then pick your disc
-image again. Memory card saves live in app-private storage and cannot be copied over; uninstall
-the old app once you no longer need it.
-
 ## Test builds
 
 Every `main` commit and every pull request also builds `strikers-test.apk` under its
