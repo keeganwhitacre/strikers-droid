@@ -46,6 +46,15 @@ public class SettingsActivity extends NativeSettingsActivity {
                 new String[]{getString(R.string.off), "4x"}, new String[]{"1", "4"}, "1");
         choice(group, R.string.aniso, "aniso",
                 new String[]{"1x", "2x", "4x", "8x", "16x"}, new String[]{"1", "2", "4", "8", "16"}, "16");
+        // The test app also offers the magenta diagnostic, to prove the haze reaches the screen.
+        final boolean testApp = getPackageName().endsWith(".test");
+        choice(group, R.string.stadium_haze, "stadium_haze",
+                testApp ? new String[]{getString(R.string.off), getString(R.string.haze_subtle),
+                        getString(R.string.haze_strong), getString(R.string.haze_diagnostic)}
+                        : new String[]{getString(R.string.off), getString(R.string.haze_subtle),
+                        getString(R.string.haze_strong)},
+                testApp ? new String[]{"", "subtle", "strong", "diagnostic"}
+                        : new String[]{"", "subtle", "strong"}, "");
         row(group, R.string.video_driver, R.string.drivers_restart_note,
                 () -> startActivity(new Intent(this, DriverSettingsActivity.class)));
         row(group, R.string.texture_packs, R.string.texture_packs_summary,
