@@ -29,7 +29,7 @@ import java.util.regex.Pattern;
 final class UpdateCheck {
     private static final String TAG = "strikers";
     private static final String LATEST =
-            "https://api.github.com/repos/keeganwhitacre/strikers-droid/releases/latest";
+            "https://api.github.com/repos/keewhi/strikers-droid/releases/latest";
     private static final long INTERVAL_MS = 24L * 60 * 60 * 1000;
     private static final int MAX_RESPONSE_BYTES = 256 * 1024;
     // 2.0.0-android.1, as android-release.yml names a release build, with or without its tag prefix.
