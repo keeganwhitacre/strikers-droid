@@ -21,6 +21,9 @@ final class GamePreferences {
     static final String HUD = "hud";
     static final String TOUCH_HAPTICS = "touch_haptics";
 
+    // Opening the app from its icon starts the game straight away; Back in the game reaches Settings.
+    static final String AUTO_LAUNCH = "auto_launch";
+
     // Checks GitHub for a newer release once a day.
     static final String UPDATE_CHECK = "update_check";
 

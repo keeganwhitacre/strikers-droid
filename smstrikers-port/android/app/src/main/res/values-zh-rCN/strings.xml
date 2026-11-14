@@ -54,6 +54,8 @@
     <string name="unlock_all_help">所有球场、队伍和杯赛。</string>
     <string name="hud">性能面板</string>
     <string name="hud_help">FPS、每帧耗时、GPU、内存和温度，显示在屏幕顶部。</string>
+    <string name="auto_launch">直接进入游戏</string>
+    <string name="auto_launch_help">点击应用图标直接启动游戏。游戏中按返回键打开设置。</string>
     <string name="game_note">全部解锁由游戏在启动时读取。面板立即生效。</string>
 
     <string name="driver_system">系统自带</string>

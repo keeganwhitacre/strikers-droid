@@ -155,6 +155,7 @@ public class SettingsActivity extends NativeSettingsActivity {
         });
         toggle(group, R.string.unlock_all, R.string.unlock_all_help, "unlock_all", true);
         toggle(group, R.string.hud, R.string.hud_help, GamePreferences.HUD, false);
+        toggle(group, R.string.auto_launch, R.string.auto_launch_help, GamePreferences.AUTO_LAUNCH, false);
         toggle(group, R.string.update_check, R.string.update_check_help,
                 GamePreferences.UPDATE_CHECK, false);
         ListPreference language = list(group, getText(R.string.language), AppLocale.displayNames(this), AppLocale.LANGUAGE_TAGS,
