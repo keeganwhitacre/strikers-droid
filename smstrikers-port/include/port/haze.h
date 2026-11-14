@@ -19,6 +19,8 @@ typedef struct PortHaze
     float start;     // Distance from the camera where the haze begins.
     float end;       // Distance where the haze would be total.
     int sky;         // Also haze the skybox.
+    int diagnostic;  // stadium_haze = diagnostic: unmistakable magenta, even on no-fog materials.
+    int logged;      // The renderer has reported its first hazed view this match.
 } PortHaze;
 
 // Called as each stadium is built, with the lower-case base name (wario_stadium, ...).
