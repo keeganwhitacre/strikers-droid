@@ -7,8 +7,7 @@
 //   haze_start   = distance
 //   haze_end     = distance
 //   haze_sky     = 0 | 1
-//   haze_all     = 1                       (also replace the retail fog in the three stadiums
-//                                           that have one)
+// The three stadiums with retail fog get the haze in their retail fog's colour instead.
 // The overrides apply to whichever stadium is loaded, which is what tuning one stadium needs.
 
 #include "port/haze.h"
@@ -23,27 +22,26 @@ typedef struct HazeDefault
 {
     const char* name;
     unsigned char r, g, b;
-    int retailFog;  // The retail game already fogs this stadium (BasicStadium's constructor).
 } HazeDefault;
 
 // Starting points to tune by eye, not measurements. The three retail fog colours come from
-// glx_SetFog; the rest are guesses at each stadium's ambient light.
+// glx_SetFog (The Palace's at its 0.5 intensity); the rest are guesses at each stadium's ambient
+// light.
 static const HazeDefault kDefaults[] = {
-    { "mario_stadium", 0xAE, 0x73, 0x55, 1 },  // Pipeline Central
-    { "the_palace", 0x2C, 0xB9, 0xFF, 1 },     // The Palace
-    { "dk_daisy", 0xFA, 0xE6, 0xB9, 1 },       // Konga Coliseum
-    { "wario_stadium", 96, 101, 146, 0 },      // The Underground
-    { "yoshi_stadium", 196, 172, 140, 0 },     // Crater Field
-    { "super_stadium", 150, 165, 190, 0 },     // Super Stadium
-    { "forbidden_dome", 112, 64, 54, 0 },      // Bowser Stadium
+    { "mario_stadium", 0xAE, 0x73, 0x55 },  // Pipeline Central
+    { "the_palace", 0x16, 0x5C, 0x80 },     // The Palace
+    { "dk_daisy", 0xFA, 0xE6, 0xB9 },       // Konga Coliseum
+    { "wario_stadium", 96, 101, 146 },      // The Underground
+    { "yoshi_stadium", 196, 172, 140 },     // Crater Field
+    { "super_stadium", 150, 165, 190 },     // Super Stadium
+    { "forbidden_dome", 112, 64, 54 },      // Bowser Stadium
 };
 
-// Where the haze begins, and how far beyond that it would reach full strength, per level. The
-// haze never reaches full strength on the pitch; these put roughly a third (subtle) or half
-// (strong) of the haze colour on the far stands, if those are 150 to 200 units away.
+// Where the haze begins, and how far beyond that it would reach full strength, per level, as
+// tuned on a device: subtle is what first shipped as strong, and strong goes a step further.
 static const float kStart = 40.0f;
-static const float kSpanSubtle = 320.0f;
-static const float kSpanStrong = 190.0f;
+static const float kSpanSubtle = 190.0f;
+static const float kSpanStrong = 140.0f;
 
 static PortHaze s_haze;
 
@@ -51,7 +49,7 @@ static PortHaze s_haze;
 // environment once, at startup; this re-reads just these keys so later edits count.
 #define HAZE_KEYS 7
 static const char* const kKeys[HAZE_KEYS] = { "stadium_haze", "haze_color", "haze_start", "haze_end",
-                                             "haze_sky", "haze_all", NULL };
+                                             "haze_sky", NULL, NULL };
 static char s_values[HAZE_KEYS][64];
 static int s_found[HAZE_KEYS];
 
@@ -197,12 +195,6 @@ void PortHazeSelectStadium(const char* baseName)
         s_haze.end = 120.0f;
         s_haze.sky = 1;
         fprintf(stderr, "[port] haze: diagnostic magenta for %s\n", baseName);
-        return;
-    }
-    if (d->retailFog && setting("haze_all") == NULL)
-    {
-        fprintf(stderr, "[port] haze: %s keeps its retail fog (haze_all = 1 replaces it)\n",
-                baseName);
         return;
     }
 
