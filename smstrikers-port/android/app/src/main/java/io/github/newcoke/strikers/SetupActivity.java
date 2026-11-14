@@ -51,6 +51,7 @@ public class SetupActivity extends Activity {
                 startActivity(new Intent(this, SettingsActivity.class)));
         updateDisc();
         (play.isEnabled() ? play : chooseDisc).requestFocus();
+        UpdateCheck.maybeCheck(this);
     }
 
     @Override

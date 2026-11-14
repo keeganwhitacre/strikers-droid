@@ -19,6 +19,10 @@ final class GamePreferences {
     static final String TOUCH_SIZE = "touch_size";  // Percent.
     static final String TOUCH_DEADZONE = "touch_deadzone";  // Percent.
     static final String HUD = "hud";
+    static final String TOUCH_HAPTICS = "touch_haptics";
+
+    // Checks GitHub for a newer release once a day.
+    static final String UPDATE_CHECK = "update_check";
 
     // App locale follows the system when its BCP 47 tag is empty.
     static final String APP_LANGUAGE = "app_language";
@@ -34,7 +38,8 @@ final class GamePreferences {
     }
 
     boolean getBoolean(String key) {
-        return preferences.getBoolean(key, false);
+        final boolean on = TOUCH_HAPTICS.equals(key) || UPDATE_CHECK.equals(key);
+        return preferences.getBoolean(key, on);
     }
 
     int getInt(String key) {
