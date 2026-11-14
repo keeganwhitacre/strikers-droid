@@ -1299,7 +1299,7 @@ void draw_render_tab()
             {
                 haze->color[0] = haze->color[1] = haze->color[2] = 0.6f;
                 haze->start = 40.0f;
-                haze->end = 360.0f;
+                haze->end = 230.0f;
             }
             haze->active = on ? 1 : 0;
         }
