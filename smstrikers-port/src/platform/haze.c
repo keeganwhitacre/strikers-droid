@@ -1,7 +1,8 @@
 // Optional stadium haze. See include/port/haze.h.
 //
-// strikers.ini:
-//   stadium_haze = off | subtle | strong   (or 0, 1, 2)
+// strikers.ini, read again as each stadium loads, so a change made while the game runs (the Android
+// settings screen) applies from the next match:
+//   stadium_haze = off | subtle | strong | diagnostic   (or 0, 1, 2)
 //   haze_color   = r, g, b                 (0-255; overrides the stadium's default)
 //   haze_start   = distance
 //   haze_end     = distance
@@ -11,10 +12,12 @@
 // The overrides apply to whichever stadium is loaded, which is what tuning one stadium needs.
 
 #include "port/haze.h"
+#include "port/config.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 typedef struct HazeDefault
 {
@@ -44,25 +47,102 @@ static const float kSpanStrong = 190.0f;
 
 static PortHaze s_haze;
 
-static const char* env(const char* name)
+// The haze keys as strikers.ini has them now. The config loader exported the file to the
+// environment once, at startup; this re-reads just these keys so later edits count.
+#define HAZE_KEYS 7
+static const char* const kKeys[HAZE_KEYS] = { "stadium_haze", "haze_color", "haze_start", "haze_end",
+                                             "haze_sky", "haze_all", NULL };
+static char s_values[HAZE_KEYS][64];
+static int s_found[HAZE_KEYS];
+
+static char* trim(char* p)
 {
-    const char* v = getenv(name);
+    char* end;
+    while (isspace((unsigned char)*p))
+        p++;
+    end = p + strlen(p);
+    while (end > p && isspace((unsigned char)end[-1]))
+        *--end = '\0';
+    return p;
+}
+
+static void read_ini(void)
+{
+    const char* path = PortConfigPath();
+    char line[512];
+    FILE* f;
+    memset(s_found, 0, sizeof s_found);
+    if (path == NULL || (f = fopen(path, "r")) == NULL)
+        return;
+    while (fgets(line, (int)sizeof line, f) != NULL)
+    {
+        char* p = trim(line);
+        char* eq = strchr(p, '=');
+        char* key;
+        char* val;
+        size_t i, n;
+        if (*p == '#' || *p == ';' || *p == '[' || eq == NULL)
+            continue;
+        *eq = '\0';
+        key = trim(p);
+        val = trim(eq + 1);
+        for (i = 0; key[i] != '\0'; i++)
+            key[i] = (char)tolower((unsigned char)key[i]);
+        if (strncmp(key, "strikers_", 9) == 0)
+            key += 9;
+        n = strlen(val);
+        if (n >= 2 && (val[0] == '"' || val[0] == '\'') && val[n - 1] == val[0])
+        {
+            val[n - 1] = '\0';
+            val++;
+        }
+        for (i = 0; kKeys[i] != NULL; i++)
+        {
+            // The first assignment wins, as it does for the config loader.
+            if (!s_found[i] && strcmp(key, kKeys[i]) == 0)
+            {
+                snprintf(s_values[i], sizeof s_values[i], "%s", val);
+                s_found[i] = 1;
+            }
+        }
+    }
+    fclose(f);
+}
+
+// strikers.ini's value, else the environment's (STRIKERS_<KEY>), else NULL.
+static const char* setting(const char* key)
+{
+    char name[64];
+    const char* v;
+    size_t i;
+    for (i = 0; kKeys[i] != NULL; i++)
+    {
+        if (strcmp(key, kKeys[i]) == 0 && s_found[i])
+            return s_values[i][0] != '\0' ? s_values[i] : NULL;
+    }
+    snprintf(name, sizeof name, "STRIKERS_%s", key);
+    for (i = 9; name[i] != '\0'; i++)
+        name[i] = (char)toupper((unsigned char)name[i]);
+    v = getenv(name);
     return (v != NULL && v[0] != '\0') ? v : NULL;
 }
 
+// 0 off, 1 subtle, 2 strong, 3 diagnostic.
 static int level(void)
 {
-    const char* v = env("STRIKERS_STADIUM_HAZE");
+    const char* v = setting("stadium_haze");
     if (v == NULL || strcmp(v, "0") == 0 || strcmp(v, "off") == 0)
         return 0;
     if (strcmp(v, "2") == 0 || strcmp(v, "strong") == 0)
         return 2;
+    if (strcmp(v, "diagnostic") == 0)
+        return 3;
     return 1;  // 1, subtle, or anything else that asks for it
 }
 
 static void read_float(const char* name, float* out)
 {
-    const char* v = env(name);
+    const char* v = setting(name);
     char* end;
     float f;
     if (v == NULL)
@@ -77,14 +157,19 @@ static void read_float(const char* name, float* out)
 void PortHazeSelectStadium(const char* baseName)
 {
     const HazeDefault* d = NULL;
-    const int lvl = level();
+    int lvl;
     size_t i;
     int r, g, b;
     const char* color;
 
     memset(&s_haze, 0, sizeof s_haze);
+    read_ini();
+    lvl = level();
     if (lvl == 0 || baseName == NULL)
+    {
+        fprintf(stderr, "[port] haze: off for %s\n", baseName != NULL ? baseName : "?");
         return;
+    }
 
     for (i = 0; i < sizeof kDefaults / sizeof kDefaults[0]; i++)
     {
@@ -95,9 +180,31 @@ void PortHazeSelectStadium(const char* baseName)
         }
     }
     if (d == NULL)
+    {
+        fprintf(stderr, "[port] haze: no entry for stadium %s\n", baseName);
         return;
-    if (d->retailFog && env("STRIKERS_HAZE_ALL") == NULL)
+    }
+    if (lvl == 3)
+    {
+        // Proof that the haze reaches the screen, before any tuning: everything past a few units
+        // turns magenta, sky and no-fog materials included, in every stadium.
+        s_haze.active = 1;
+        s_haze.diagnostic = 1;
+        s_haze.color[0] = 1.0f;
+        s_haze.color[1] = 0.0f;
+        s_haze.color[2] = 1.0f;
+        s_haze.start = 0.0f;
+        s_haze.end = 120.0f;
+        s_haze.sky = 1;
+        fprintf(stderr, "[port] haze: diagnostic magenta for %s\n", baseName);
         return;
+    }
+    if (d->retailFog && setting("haze_all") == NULL)
+    {
+        fprintf(stderr, "[port] haze: %s keeps its retail fog (haze_all = 1 replaces it)\n",
+                baseName);
+        return;
+    }
 
     s_haze.active = 1;
     s_haze.color[0] = d->r / 255.0f;
@@ -107,7 +214,7 @@ void PortHazeSelectStadium(const char* baseName)
     s_haze.end = kStart + (lvl == 2 ? kSpanStrong : kSpanSubtle);
     s_haze.sky = 0;
 
-    color = env("STRIKERS_HAZE_COLOR");
+    color = setting("haze_color");
     if (color != NULL)
     {
         if (sscanf(color, "%d , %d , %d", &r, &g, &b) == 3 && r >= 0 && r <= 255 && g >= 0
@@ -122,10 +229,10 @@ void PortHazeSelectStadium(const char* baseName)
             fprintf(stderr, "[port] haze: haze_color = %s is not r, g, b from 0 to 255\n", color);
         }
     }
-    read_float("STRIKERS_HAZE_START", &s_haze.start);
-    read_float("STRIKERS_HAZE_END", &s_haze.end);
-    if (env("STRIKERS_HAZE_SKY") != NULL)
-        s_haze.sky = strcmp(env("STRIKERS_HAZE_SKY"), "0") != 0;
+    read_float("haze_start", &s_haze.start);
+    read_float("haze_end", &s_haze.end);
+    if (setting("haze_sky") != NULL)
+        s_haze.sky = strcmp(setting("haze_sky"), "0") != 0;
     if (s_haze.end <= s_haze.start)
         s_haze.end = s_haze.start + 1.0f;
 
