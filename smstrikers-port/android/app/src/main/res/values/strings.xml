@@ -133,4 +133,7 @@
     <string name="touch_pass">Pass</string>
     <string name="touch_lob">Lob</string>
     <string name="settings_shortcut">Settings shortcut (takes the selected stick click out of play)</string>
+    <string name="stadium_haze">Stadium haze</string>
+    <string name="haze_subtle">Subtle</string>
+    <string name="haze_strong">Strong</string>
 </resources>

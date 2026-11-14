@@ -1,4 +1,5 @@
 #include "Game/BasicStadium.h"
+#include "port/haze.h"
 #include <stdlib.h>
 #include "port/probeobj.h"
 extern "C" void OSReport(const char*, ...);
@@ -98,6 +99,8 @@ BasicStadium::BasicStadium(const char* szBaseName)
     {
         glx_SetFog(2);
     }
+
+    PortHazeSelectStadium(m_szBaseName);  // PORT: optional haze, off by default
 
     CrowdManager::instance.SetStadium(m_szBaseName);
 
