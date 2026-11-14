@@ -374,7 +374,7 @@ static void glx_SendViews()
         do
         {
             // PORT: the optional haze takes the place of the stadium's fog when it is on.
-            const PortHaze* haze = PortHazeState();
+            PortHaze* haze = PortHazeState();
             if (glx_bFog || haze->active)
             {
                 switch (view)
@@ -414,6 +414,13 @@ static void glx_SendViews()
                         glx_HazeFog.nearZ = nearZ;
                         glx_HazeFog.farZ = farZ;
                         glx_HazeFog.colour = colour;
+                        if (!haze->logged)
+                        {
+                            haze->logged = 1;
+                            OSReport("[port] haze: drawing in view %d, planes %.3f to %.1f, %.0f to %.0f\n",
+                                     (int)view, (double)nearZ, (double)farZ, (double)haze->start,
+                                     (double)haze->end);
+                        }
                     }
                     else
                     {
@@ -561,7 +568,9 @@ void glx_Fog(bool enable)
  */
 bool glx_GetFog()
 {
-    return glx_bFog || PortHazeState()->active;  // PORT: so no-fog materials also skip the haze
+    // PORT: so no-fog materials also skip the haze; the diagnostic haze covers them too.
+    const PortHaze* haze = PortHazeState();
+    return glx_bFog || (haze->active && !haze->diagnostic);
 }
 
 /**

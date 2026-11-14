@@ -145,4 +145,5 @@
     <string name="update_download">Download</string>
     <string name="update_later">Later</string>
     <string name="update_skip">Skip this version</string>
+    <string name="haze_diagnostic">Diagnostic (magenta)</string>
 </resources>

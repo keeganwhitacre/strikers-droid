@@ -117,7 +117,9 @@ updates signed with the same key.
 **Settings → Video → Stadium haze** adds distance haze to The Underground, Crater Field, Super
 Stadium and Bowser Stadium, so the far stands recede instead of looking as sharp as the pitch.
 It applies from the next match and does not affect online play. The other three stadiums keep
-the game's own fog.
+the game's own fog. The test app also offers **Diagnostic (magenta)**, which turns everything past
+a few metres magenta in every stadium: if that shows, the haze reaches the screen and only needs
+tuning.
 
 To tune a stadium's colour and distances live, add `overlay = menu` to `strikers.ini`, start a
 match there, and open the **Render** tab's **stadium haze** section. **Copy for strikers.ini**
