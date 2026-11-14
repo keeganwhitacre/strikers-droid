@@ -52,6 +52,25 @@ public class SetupActivity extends Activity {
         updateDisc();
         (play.isEnabled() ? play : chooseDisc).requestFocus();
         UpdateCheck.maybeCheck(this);
+        if (savedInstanceState == null) maybeAutoLaunch(getIntent());
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        // The icon tapped again while this screen is alive behind a running game.
+        maybeAutoLaunch(intent);
+    }
+
+    // Only for the app icon: not a restore, a return from recents or a language change, which all
+    // land here expecting this screen. A missing or unreadable disc stays here with its error.
+    private void maybeAutoLaunch(Intent intent) {
+        if (!new GamePreferences(this).getBoolean(GamePreferences.AUTO_LAUNCH)) return;
+        if (intent == null || !Intent.ACTION_MAIN.equals(intent.getAction())
+                || !intent.hasCategory(Intent.CATEGORY_LAUNCHER)
+                || (intent.getFlags() & Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY) != 0) return;
+        if (play.isEnabled()) launchGame();
     }
 
     @Override
