@@ -86,6 +86,8 @@ public class SettingsActivity extends NativeSettingsActivity {
         slider(group, R.string.opacity, GamePreferences.TOUCH_OPACITY, 25, 100);
         slider(group, R.string.size, GamePreferences.TOUCH_SIZE, 75, 130);
         slider(group, R.string.deadzone, GamePreferences.TOUCH_DEADZONE, 0, 35);
+        toggle(group, R.string.touch_haptics, R.string.touch_haptics_help,
+                GamePreferences.TOUCH_HAPTICS, false);
         toggle(group, R.string.dpad, 0, GamePreferences.SHOW_DPAD, false);
         toggle(group, R.string.right_stick, 0, GamePreferences.CSTICK, false);
         row(group, getText(R.string.sec_controls), getText(R.string.controls_note), null);
@@ -139,6 +141,8 @@ public class SettingsActivity extends NativeSettingsActivity {
     private void game(PreferenceGroup group) {
         toggle(group, R.string.unlock_all, R.string.unlock_all_help, "unlock_all", true);
         toggle(group, R.string.hud, R.string.hud_help, GamePreferences.HUD, false);
+        toggle(group, R.string.update_check, R.string.update_check_help,
+                GamePreferences.UPDATE_CHECK, false);
         ListPreference language = list(group, getText(R.string.language), AppLocale.displayNames(this), AppLocale.LANGUAGE_TAGS,
                 prefs.getString(GamePreferences.APP_LANGUAGE));
         language.setOnPreferenceChangeListener((item, value) -> {
