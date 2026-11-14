@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Play is the first and largest control, since it is what the screen is opened for nearly every
+     time. The disc and Settings are a step down: tonal buttons side by side. -->
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -10,21 +12,38 @@
         android:layout_height="wrap_content"
         android:gravity="center"
         android:orientation="vertical"
-        android:padding="20dp">
+        android:padding="24dp">
 
         <ImageView
-            android:layout_width="52dp"
-            android:layout_height="52dp"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
             android:importantForAccessibility="no"
             android:src="@mipmap/ic_launcher" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="12dp"
             android:gravity="center"
             android:text="@string/setup_title"
-            android:textAppearance="?android:attr/textAppearanceLarge" />
+            android:textColor="@color/launcher_on_surface"
+            android:textSize="24sp" />
+
+        <Button
+            android:id="@+id/play"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="28dp"
+            android:background="@drawable/launcher_button_filled"
+            android:minWidth="240dp"
+            android:minHeight="56dp"
+            android:paddingStart="32dp"
+            android:paddingEnd="32dp"
+            android:stateListAnimator="@null"
+            android:text="@string/play"
+            android:textAllCaps="false"
+            android:textColor="@color/launcher_filled_text"
+            android:textSize="18sp" />
 
         <TextView
             android:id="@+id/disc_name"
@@ -35,15 +54,9 @@
             android:ellipsize="middle"
             android:gravity="center"
             android:maxLines="1"
-            android:maxWidth="300dp" />
-
-        <Button
-            android:id="@+id/choose_disc"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:minWidth="184dp"
-            android:text="@string/disc_image"
-            android:textAllCaps="false" />
+            android:maxWidth="300dp"
+            android:textColor="@color/launcher_on_surface_variant"
+            android:textSize="14sp" />
 
         <Button
             android:id="@+id/forget_disc"
@@ -52,24 +65,48 @@
             android:layout_height="wrap_content"
             android:text="@string/forget_disc"
             android:textAllCaps="false"
+            android:textColor="@color/launcher_primary"
+            android:textSize="14sp"
             android:visibility="gone" />
 
-        <Button
-            android:id="@+id/play"
-            style="@android:style/Widget.Material.Button.Colored"
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:minWidth="184dp"
-            android:text="@string/play"
-            android:textAllCaps="false" />
+            android:layout_marginTop="16dp"
+            android:orientation="horizontal">
 
-        <Button
-            android:id="@+id/settings"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:minWidth="184dp"
-            android:text="@string/settings"
-            android:textAllCaps="false" />
+            <Button
+                android:id="@+id/choose_disc"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/launcher_button_tonal"
+                android:minWidth="132dp"
+                android:minHeight="48dp"
+                android:paddingStart="24dp"
+                android:paddingEnd="24dp"
+                android:stateListAnimator="@null"
+                android:text="@string/disc_image"
+                android:textAllCaps="false"
+                android:textColor="@color/launcher_tonal_text"
+                android:textSize="15sp" />
+
+            <Button
+                android:id="@+id/settings"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:background="@drawable/launcher_button_tonal"
+                android:minWidth="132dp"
+                android:minHeight="48dp"
+                android:paddingStart="24dp"
+                android:paddingEnd="24dp"
+                android:stateListAnimator="@null"
+                android:text="@string/settings"
+                android:textAllCaps="false"
+                android:textColor="@color/launcher_tonal_text"
+                android:textSize="15sp" />
+
+        </LinearLayout>
 
     </LinearLayout>
 </ScrollView>

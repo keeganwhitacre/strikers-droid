@@ -73,8 +73,9 @@ Open **Controller bindings** in Settings to map GameCube buttons to physical
 button positions. The choices use the same `pad_*` keys as the Switch port.
 They apply to all controllers, including the virtual touch pad, on the next
 game start. Stick layout, deadzone, and rumble also use shared controller settings.
-**Game default** clears the override for that option. During play,
-press **Guide** to open Settings when Android delivers that button to the app.
+**Game default** clears the override for that option. During play, the phone's
+**Back** opens Settings, as does **Guide** when Android delivers that button to the app. A
+controller's Back/Select stays the Online button.
 
 **Touch layout** offers the existing Standard layout, smaller Compact phone
 controls, and Tablet reach, which brings the side controls inward. Size,
