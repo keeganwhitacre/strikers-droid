@@ -7,7 +7,6 @@
   values-pt-rBR/ with the rest.
 -->
 <resources>
-    <string name="app_name" translatable="false">Strikers</string>
 
     <!-- The launcher -->
     <string name="setup_title" translatable="false">Super Mario Strikers</string>
