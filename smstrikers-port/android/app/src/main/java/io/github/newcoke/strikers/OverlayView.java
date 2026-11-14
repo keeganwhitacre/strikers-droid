@@ -134,8 +134,12 @@ public class OverlayView extends View {
     interface SettingsListener { void openSettings(); }
     private SettingsListener settingsListener;
 
+    private boolean haptics;
+    private final android.os.Vibrator vibrator;
+
     public OverlayView(Context ctx) {
         super(ctx);
+        vibrator = (android.os.Vibrator) ctx.getSystemService(Context.VIBRATOR_SERVICE);
         setFocusable(false);
         labelPaint.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
         labelPaint.setTextAlign(Paint.Align.CENTER);
@@ -155,6 +159,7 @@ public class OverlayView extends View {
         deadzone = prefs.getInt(GamePreferences.TOUCH_DEADZONE) / 100f;
         showDpad = prefs.getBoolean(GamePreferences.SHOW_DPAD);
         showCStick = prefs.getBoolean(GamePreferences.CSTICK);
+        haptics = prefs.getBoolean(GamePreferences.TOUCH_HAPTICS);
         if (getWidth() > 0) {
             layoutControls(getWidth(), getHeight());
         }
@@ -615,8 +620,22 @@ public class OverlayView extends View {
             if (c.pointerId < 0 && c.contains(x, y)) {
                 c.pointerId = pointerId;
                 if (c.shape == Shape.STICK) move(pointerId, x, y);
+                else if (!editing) tick();
                 return;
             }
+        }
+    }
+
+    // A short tick under the thumb, so a touch button feels pressed. Through the vibrator rather
+    // than performHapticFeedback, which many phones turn off system-wide for the keyboard.
+    private void tick() {
+        if (!haptics || vibrator == null || !vibrator.hasVibrator()) return;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            vibrator.vibrate(android.os.VibrationEffect.createPredefined(
+                    android.os.VibrationEffect.EFFECT_TICK));
+        } else {
+            vibrator.vibrate(android.os.VibrationEffect.createOneShot(
+                    12, android.os.VibrationEffect.DEFAULT_AMPLITUDE));
         }
     }
 

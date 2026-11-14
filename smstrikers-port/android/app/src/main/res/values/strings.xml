@@ -136,4 +136,13 @@
     <string name="stadium_haze">Stadium haze</string>
     <string name="haze_subtle">Subtle</string>
     <string name="haze_strong">Strong</string>
+    <string name="touch_haptics">Haptics</string>
+    <string name="touch_haptics_help">A short vibration when you press a touch button.</string>
+    <string name="update_check">Check for updates</string>
+    <string name="update_check_help">Once a day, ask GitHub whether a newer release is out.</string>
+    <string name="update_available">Update available</string>
+    <string name="update_message">Strikers %1$s is out. You have %2$s. Online play needs the same version as your opponent.</string>
+    <string name="update_download">Download</string>
+    <string name="update_later">Later</string>
+    <string name="update_skip">Skip this version</string>
 </resources>
