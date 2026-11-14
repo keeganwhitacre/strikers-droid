@@ -9,6 +9,11 @@ def auroraJavaDir = providers.gradleProperty('strikers.auroraJavaDir').get()
 
 def releaseKeystore = providers.environmentVariable('STRIKERS_ANDROID_KEYSTORE')
 
+// "release" only from android-release.yml. Every other build, CI and local, is the test app: its own
+// package and name, so it installs beside a released Strikers and cannot overwrite its saves.
+def channel = providers.gradleProperty('strikers.channel').orElse('test').get()
+def releaseChannel = channel == 'release'
+
 android {
     namespace 'io.github.newcoke.strikers'
     compileSdk 35
@@ -18,7 +23,9 @@ android {
     defaultConfig {
         // The fork's own ID. The Java package (namespace above) stays io.github.newcoke.strikers
         // because the JNI entry points in src/platform/android are named after it.
-        applicationId 'io.github.keeganwhitacre.strikers'
+        applicationId releaseChannel ? 'io.github.keeganwhitacre.strikers'
+                : 'io.github.keeganwhitacre.strikers.test'
+        resValue 'string', 'app_name', releaseChannel ? 'Strikers' : 'Strikers Test'
         // 28, because that is what Aurora's prebuilt Dawn is compiled against; the game itself
         // asks for nothing newer.
         minSdk 28
@@ -50,6 +57,14 @@ android {
     }
 
     signingConfigs {
+        // Test builds share this committed key so each one installs over the last. It signs only
+        // the .test package, so it guards nothing; the distribution key below stays secret.
+        test {
+            storeFile file('../test.keystore')
+            storePassword 'strikers-test'
+            keyAlias 'strikers-test'
+            keyPassword 'strikers-test'
+        }
         if (releaseKeystore.isPresent()) {
             distribution {
                 storeFile file(releaseKeystore.get())
@@ -65,7 +80,8 @@ android {
             minifyEnabled false
             // The game is all native code; there is no Java worth shrinking, and R8 would only put
             // SDLActivity's reflected entry points at risk.
-            signingConfig releaseKeystore.isPresent() ? signingConfigs.distribution : signingConfigs.debug
+            signingConfig !releaseChannel ? signingConfigs.test
+                    : releaseKeystore.isPresent() ? signingConfigs.distribution : signingConfigs.debug
         }
         debug {
             // No applicationIdSuffix on purpose. The suffix would move the app's own folder on
@@ -79,6 +95,11 @@ android {
             // libadrenotools loads its hooks from the extracted native library directory.
             useLegacyPackaging true
         }
+    }
+
+    buildFeatures {
+        // app_name comes from the channel above.
+        resValues true
     }
 
     compileOptions {

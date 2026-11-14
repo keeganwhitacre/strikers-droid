@@ -111,13 +111,24 @@ jobs:
         # builds are signed with different keys, so their numbers never have to be compared.
         run: |
           VERSION_NAME="${VERSION_NAME#android-v}"
+          channel=test
+          [ "$RELEASE" = true ] && channel=release
           ./android/gradlew -p android --no-daemon assembleRelease \
+            -Pstrikers.channel="$channel" \
             -Pstrikers.versionCode="${{ github.run_number }}" \
             -Pstrikers.versionName="${VERSION_NAME:-2.0.0-ci.${{ github.run_number }}}"
 
-      - name: Stage and verify strikers.apk
+      - name: Stage and verify the APK
         run: |
-          apk="$RUNNER_TEMP/strikers-android/strikers.apk"
+          # The release keeps the name android-release.yml downloads; a test build says what it is.
+          if [ "$RELEASE" = true ]; then
+            apk="$RUNNER_TEMP/strikers-android/strikers.apk"
+            package=io.github.keeganwhitacre.strikers
+          else
+            apk="$RUNNER_TEMP/strikers-android/strikers-test.apk"
+            package=io.github.keeganwhitacre.strikers.test
+          fi
+          echo "APK=$apk" >> "$GITHUB_ENV"
           sdk_tools="$ANDROID_HOME/build-tools/$ANDROID_BUILD_TOOLS_VERSION"
           install -D -m 0644 android/app/build/outputs/apk/release/app-release.apk "$apk"
           "$sdk_tools/apksigner" verify --verbose "$apk"
@@ -127,16 +138,18 @@ jobs:
             exit 1
           fi
           "$sdk_tools/zipalign" -c -P 16 4 "$apk"
-          "$sdk_tools/aapt2" dump badging "$apk" | grep -Fx "native-code: 'arm64-v8a'"
+          badging=$("$sdk_tools/aapt2" dump badging "$apk")
+          grep -Fx "native-code: 'arm64-v8a'" <<< "$badging"
+          grep -q "^package: name='$package' " <<< "$badging"
           entries=$(unzip -Z1 "$apk")
           for lib in libmain.so libc++_shared.so libvulkan.so libmain_hook.so \
                      libfile_redirect_hook.so libgsl_alloc_hook.so libhook_impl.so; do
             grep -Fx "lib/arm64-v8a/$lib" <<< "$entries"
           done
 
-      - name: Upload strikers.apk
+      - name: Upload the APK
         uses: actions/upload-artifact@v7
         with:
-          path: ${{ runner.temp }}/strikers-android/strikers.apk
+          path: ${{ env.APK }}
           archive: false
           if-no-files-found: error
