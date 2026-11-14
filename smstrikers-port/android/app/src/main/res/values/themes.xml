@@ -8,6 +8,16 @@
         <item name="android:colorAccent">@color/accent</item>
         <item name="android:windowNoTitle">true</item>
     </style>
-    <style name="Theme.Strikers.Setup" parent="@android:style/Theme.Material.Light.NoActionBar" />
+    <style name="Theme.Strikers.Setup" parent="@android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/launcher_surface</item>
+        <item name="android:colorBackground">@color/launcher_surface</item>
+        <item name="android:textColorPrimary">@color/launcher_on_surface</item>
+        <item name="android:textColorSecondary">@color/launcher_on_surface_variant</item>
+        <item name="android:colorAccent">@color/launcher_primary</item>
+        <item name="android:statusBarColor">@color/launcher_surface</item>
+        <item name="android:navigationBarColor">@color/launcher_surface</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+    </style>
     <style name="Theme.Strikers.Settings" parent="@android:style/Theme.Material.Light" />
 </resources>
