@@ -9,14 +9,21 @@ and rollback code come from [Strikers upstream](https://github.com/new-coke/stri
 - Use an ARM64 device running Android 9 or later with Vulkan support.
 - Use data from your own US, European, or Japanese copy of Super Mario Strikers.
   The APK contains no game assets.
-- Download `strikers.apk` from a successful [Android APK workflow run](https://github.com/keeganwhitacre/strikers-droid/actions?query=branch%3Amain)
-  or build it below. Open the run and download `strikers.apk` under **Artifacts**.
-  CI artifacts require a signed-in GitHub account.
+- Download the APK from [Releases](https://github.com/keeganwhitacre/strikers-droid/releases),
+  or build it below. Untested builds of every `main` commit are under
+  [Android APK workflow runs](https://github.com/keeganwhitacre/strikers-droid/actions/workflows/android.yml?query=branch%3Amain)
+  as `strikers.apk`; those need a signed-in GitHub account and are debug-signed.
 
-The app appears as **Strikers**. It retains the settings preview's package ID and
-storage location. Android requires the same signing key for an in-place update.
-CI builds use a debug key and are intended for testing. Back up the app's game
-directory before removing an existing installation.
+The app appears as **Strikers** with the package ID `io.github.keeganwhitacre.strikers`.
+Android requires the same signing key for an in-place update, so a build from
+[Releases](https://github.com/keeganwhitacre/strikers-droid/releases) updates only
+another release build. CI builds use a debug key and are intended for testing.
+
+Builds before the package ID change installed as `io.github.newcoke.strikers.settingspreview`
+and appear as a separate app. Copy `strikers.ini`, texture packs and any extracted `files`
+directory from that app's folder under `Android/data/` into the new one, then pick your disc
+image again. Memory card saves live in app-private storage and cannot be copied over; uninstall
+the old app once you no longer need it.
 
 ## Build from source
 
@@ -47,7 +54,7 @@ remembers the selection. Press **Play** to read the image in place. If a storage
 only stream the image, download it locally before choosing it.
 
 For an extracted disc, place its `files` directory under
-`Android/data/io.github.newcoke.strikers.settingspreview/files/` with USB or ADB. The launcher
+`Android/data/io.github.keeganwhitacre.strikers/files/` with USB or ADB. The launcher
 also finds supported images in that app-specific directory when no image is selected.
 
 ## Settings and controls
@@ -94,8 +101,8 @@ teams and ready up again.
 The system Vulkan driver is the default. On compatible Adreno devices, download
 a suitable ZIP from [AdrenoToolsDrivers](https://github.com/K11MCH1/AdrenoToolsDrivers/releases)
 and choose **Settings → Video → Video driver → Import ZIP**. Imported drivers run
-native code inside the game. Existing installed drivers and selections carry
-forward on upgrade, including the legacy `turnip-26.0-geral` folder ID.
+native code inside the game. Installed drivers and the selection persist across
+updates signed with the same key.
 
 ## Texture packs
 
@@ -129,10 +136,41 @@ CI artifacts use debug signing. To build with a maintainer-owned key, set
 `STRIKERS_ANDROID_KEYSTORE` to the absolute keystore path and provide
 `STRIKERS_ANDROID_STORE_PASSWORD`, `STRIKERS_ANDROID_KEY_ALIAS`, and
 `STRIKERS_ANDROID_KEY_PASSWORD` in the environment before running
-`assembleRelease`. Keep the key outside the repository and back it up.
-Use the same key for subsequent distributed builds and verify an in-place
-upgrade before publishing. A debug-signed installation needs a backup and
-reinstall when moving to a differently signed APK.
+`assembleRelease`. Keep the key outside the repository and back it up: every
+later release must be signed with the same key, or players cannot update in place.
+
+Create the key once:
+
+```sh
+keytool -genkeypair -v -keystore strikers-release.keystore -alias strikers \
+    -keyalg RSA -keysize 4096 -validity 10000
+```
+
+For CI, add these repository secrets under **Settings → Secrets and variables → Actions**:
+
+| Secret | Value |
+| --- | --- |
+| `ANDROID_KEYSTORE_BASE64` | Output of `base64 -w0 strikers-release.keystore` |
+| `ANDROID_KEYSTORE_PASSWORD` | Keystore password |
+| `ANDROID_KEY_ALIAS` | `strikers`, or the alias you chose |
+| `ANDROID_KEY_PASSWORD` | Key password |
+
+## Releasing
+
+Run the device checklist below, then push a tag of the form
+`android-v<upstream version>-android.<n>`:
+
+```sh
+git tag android-v2.0.0-android.1
+git push origin android-v2.0.0-android.1
+```
+
+`android-release.yml` builds the APK with the steps CI runs on every push, signs it with the
+distribution key, refuses a debug-signed result, and drafts a GitHub release with the APK and
+its checksum. Review the draft and publish it. The tag sets the APK's version name only. The
+native version stays at the upstream version in `tools/configure-android.sh`, because online
+play compares that string exactly. Upstream's `release.yml` and its `v*` tags are left
+untouched for the same reason.
 
 ## Device testing
 
@@ -153,7 +191,7 @@ For crashes or input problems, capture Android's log and the native game log:
 
 ```sh
 adb logcat -s strikers SDL DEBUG AndroidRuntime
-adb pull /sdcard/Android/data/io.github.newcoke.strikers.settingspreview/files/strikers-log.txt
+adb pull /sdcard/Android/data/io.github.keeganwhitacre.strikers/files/strikers-log.txt
 ```
 
 Use the [fork's issue tracker](https://github.com/keeganwhitacre/strikers-droid/issues)

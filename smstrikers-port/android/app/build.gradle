@@ -16,14 +16,18 @@ android {
     ndkVersion '29.0.14206865'
 
     defaultConfig {
-        // Retain the package ID for in-place upgrades from the settings preview.
-        applicationId 'io.github.newcoke.strikers.settingspreview'
+        // The fork's own ID. The Java package (namespace above) stays io.github.newcoke.strikers
+        // because the JNI entry points in src/platform/android are named after it.
+        applicationId 'io.github.keeganwhitacre.strikers'
         // 28, because that is what Aurora's prebuilt Dawn is compiled against; the game itself
         // asks for nothing newer.
         minSdk 28
         targetSdk 35
-        versionCode 5
-        versionName '2.0.0'
+        // The release workflow passes both. versionCode must only ever grow, or Android refuses
+        // the update; versionName is the Android build's label and is separate from the native
+        // STRIKERS_VERSION, which the online handshake compares and must match upstream.
+        versionCode providers.gradleProperty('strikers.versionCode').orElse('1').get().toInteger()
+        versionName providers.gradleProperty('strikers.versionName').orElse('2.0.0-dev').get()
         ndk {
             // The only ABI the prebuilt Dawn package exists for, and the only one worth shipping:
             // a 32-bit build would not address the game's heap comfortably, and x86 Android is
