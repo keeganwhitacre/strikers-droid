@@ -184,8 +184,7 @@ final class Drivers {
     static Driver importZip(Context ctx, Uri uri) {
         try (InputStream in = ctx.getContentResolver().openInputStream(uri)) {
             if (in == null) return null;
-            String name = uri.getLastPathSegment();
-            return install(ctx, in, name != null ? name : "driver");
+            return install(ctx, in, Documents.displayName(ctx, uri, "driver"));
         } catch (Exception e) {
             Log.w(TAG, "Could not import " + uri, e);
             return null;

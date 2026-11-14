@@ -31,27 +31,6 @@ final class GamePreferences {
 
     GamePreferences(Context ctx) {
         preferences = ctx.getSharedPreferences("strikers", Context.MODE_PRIVATE);
-        migrateLegacyKeys();
-    }
-
-    private void migrateLegacyKeys() {
-        String[] legacyKeys = {"direcional", "opacidade", "tamanho", "zona_morta", "idioma_app"};
-        String[] currentKeys = {SHOW_DPAD, TOUCH_OPACITY, TOUCH_SIZE, TOUCH_DEADZONE, APP_LANGUAGE};
-        java.util.Map<String, ?> stored = preferences.getAll();
-        SharedPreferences.Editor edit = null;
-        for (int i = 0; i < legacyKeys.length; i++) {
-            if (!stored.containsKey(legacyKeys[i])) continue;
-            if (edit == null) edit = preferences.edit();
-            String key = currentKeys[i];
-            Object value = stored.get(legacyKeys[i]);
-            if (!stored.containsKey(key)) {
-                if (value instanceof Boolean) edit.putBoolean(key, (Boolean) value);
-                else if (value instanceof Integer) edit.putInt(key, (Integer) value);
-                else if (value instanceof String) edit.putString(key, (String) value);
-            }
-            edit.remove(legacyKeys[i]);
-        }
-        if (edit != null) edit.apply();
     }
 
     boolean getBoolean(String key) {
@@ -76,7 +55,8 @@ final class GamePreferences {
     }
 
     String getString(String key) {
-        return preferences.getString(key, "");
+        // The layout names the file its control positions are saved in, so it needs a real default.
+        return preferences.getString(key, TOUCH_LAYOUT.equals(key) ? TOUCH_STANDARD : "");
     }
 
     void setString(String key, String value) {
