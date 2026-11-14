@@ -124,22 +124,16 @@ public class StrikersActivity extends SDLActivity {
             if (event.getAction() == KeyEvent.ACTION_UP && !event.isCanceled()) openSettings();
             return true;
         }
-        // The phone's own Back opens Settings, as Back does in other apps. Left to SDL, it either
-        // did nothing or, where the navigation keys report as a d-pad device, became the pad's
-        // Back button, which opens the online panel. A real controller's Back/Select still does.
-        if (overlay != null && event.getKeyCode() == KeyEvent.KEYCODE_BACK && !isFromController(event)) {
+        // Back opens Settings, as Back does in other apps, whatever device sends it: gesture and
+        // navigation-bar Back, and the dedicated Back key of handhelds, whose built-in controller
+        // reports it as a gamepad key. Left to SDL, a gamepad's Back keycode becomes the pad's
+        // Back button and opens the online panel. A controller's Select sends BUTTON_SELECT instead,
+        // so it still reaches the game as the Online button.
+        if (overlay != null && event.getKeyCode() == KeyEvent.KEYCODE_BACK) {
             if (event.getAction() == KeyEvent.ACTION_UP && !event.isCanceled()) openSettings();
             return true;
         }
         return super.dispatchKeyEvent(event);
-    }
-
-    private static boolean isFromController(KeyEvent event) {
-        InputDevice device = event.getDevice();
-        if (device == null) return false;
-        int sources = device.getSources();
-        return (sources & InputDevice.SOURCE_GAMEPAD) == InputDevice.SOURCE_GAMEPAD
-                || (sources & InputDevice.SOURCE_JOYSTICK) == InputDevice.SOURCE_JOYSTICK;
     }
 
     private void enterImmersiveMode() {
