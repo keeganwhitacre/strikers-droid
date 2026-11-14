@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Saves and settings only. Aurora keeps the memory card under SDL_GetPrefPath, which on Android
+    is the app's internal files directory: a GCI folder per region (USA/, EUR/, JAP/) or a raw
+    MemoryCard<slot>.<region>.raw image. Everything else stays out on purpose:
+      - disc images and texture packs, which are large and the player's own copies;
+      - imported Vulkan drivers, which are native code built for one GPU;
+      - the selected-disc preference, whose URI grant does not survive a restore;
+      - Aurora's pipeline caches, which are rebuilt on first run.
+    Android 12 and newer read data_extraction_rules.xml instead; keep the two lists in step.
+-->
+<full-backup-content>
+    <include domain="file" path="USA" />
+    <include domain="file" path="EUR" />
+    <include domain="file" path="JAP" />
+    <include domain="file" path="MemoryCardA.USA.raw" />
+    <include domain="file" path="MemoryCardA.EUR.raw" />
+    <include domain="file" path="MemoryCardA.JAP.raw" />
+    <include domain="file" path="MemoryCardB.USA.raw" />
+    <include domain="file" path="MemoryCardB.EUR.raw" />
+    <include domain="file" path="MemoryCardB.JAP.raw" />
+    <include domain="sharedpref" path="strikers.xml" />
+    <include domain="sharedpref" path="touch_positions_standard.xml" />
+    <include domain="sharedpref" path="touch_positions_compact.xml" />
+    <include domain="sharedpref" path="touch_positions_tablet.xml" />
+    <include domain="external" path="strikers.ini" />
+</full-backup-content>

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 12 and newer. See backup_rules.xml for what is included and why. -->
+<data-extraction-rules>
+    <cloud-backup>
+        <include domain="file" path="USA" />
+        <include domain="file" path="EUR" />
+        <include domain="file" path="JAP" />
+        <include domain="file" path="MemoryCardA.USA.raw" />
+        <include domain="file" path="MemoryCardA.EUR.raw" />
+        <include domain="file" path="MemoryCardA.JAP.raw" />
+        <include domain="file" path="MemoryCardB.USA.raw" />
+        <include domain="file" path="MemoryCardB.EUR.raw" />
+        <include domain="file" path="MemoryCardB.JAP.raw" />
+        <include domain="sharedpref" path="strikers.xml" />
+        <include domain="sharedpref" path="touch_positions_standard.xml" />
+        <include domain="sharedpref" path="touch_positions_compact.xml" />
+        <include domain="sharedpref" path="touch_positions_tablet.xml" />
+        <include domain="external" path="strikers.ini" />
+    </cloud-backup>
+    <device-transfer>
+        <include domain="file" path="USA" />
+        <include domain="file" path="EUR" />
+        <include domain="file" path="JAP" />
+        <include domain="file" path="MemoryCardA.USA.raw" />
+        <include domain="file" path="MemoryCardA.EUR.raw" />
+        <include domain="file" path="MemoryCardA.JAP.raw" />
+        <include domain="file" path="MemoryCardB.USA.raw" />
+        <include domain="file" path="MemoryCardB.EUR.raw" />
+        <include domain="file" path="MemoryCardB.JAP.raw" />
+        <include domain="sharedpref" path="strikers.xml" />
+        <include domain="sharedpref" path="touch_positions_standard.xml" />
+        <include domain="sharedpref" path="touch_positions_compact.xml" />
+        <include domain="sharedpref" path="touch_positions_tablet.xml" />
+        <include domain="external" path="strikers.ini" />
+    </device-transfer>
+</data-extraction-rules>
