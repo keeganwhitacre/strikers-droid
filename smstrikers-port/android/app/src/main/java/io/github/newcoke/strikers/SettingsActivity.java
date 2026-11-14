@@ -36,6 +36,7 @@ public class SettingsActivity extends NativeSettingsActivity {
                 new String[]{getString(R.string.fps_follow_display),
                         getString(R.string.fps_unlimited), "30", "60", "120"},
                 new String[]{"", "0", "30", "60", "120"}, "");
+        toggle(group, R.string.stadium_haze, R.string.stadium_haze_help, "stadium_haze", true);
         toggle(group, R.string.vsync, R.string.vsync_help, "vsync", true);
         choice(group, R.string.aspect, "aspect",
                 new String[]{getString(R.string.res_follow), "16:9", "4:3"}, new String[]{"", "16:9", "4:3"}, "");

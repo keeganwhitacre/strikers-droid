@@ -98,6 +98,14 @@ BasicStadium::BasicStadium(const char* szBaseName)
     {
         glx_SetFog(2);
     }
+#if defined(PORT_USE_AURORA)
+    else if (strcmp(m_szBaseName, "wario_stadium") == 0)
+    {
+        const char* haze = getenv("STRIKERS_STADIUM_HAZE");
+        if (haze != nullptr && strcmp(haze, "1") == 0)
+            glx_SetFog(3);
+    }
+#endif
 
     CrowdManager::instance.SetStadium(m_szBaseName);
 

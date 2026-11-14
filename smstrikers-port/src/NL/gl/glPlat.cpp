@@ -60,6 +60,7 @@ static bool glx_bFogAdjust = true;
 static bool glx_bFog = false;
 static u32 glx_FogType = 4;
 static bool glx_bFogSky = true;
+static bool glx_bStadiumHaze = false;
 static f32 glx_FogStart = 5.f;
 static f32 glx_FogEnd = 160.f;
 static f32 glx_FogIntensity = 1.f;
@@ -371,8 +372,10 @@ static void glx_SendViews()
                 case 3:
                 case 6:
                 case 7:
-                case 11:
                     useFog = true;
+                    break;
+                case 11:
+                    useFog = !glx_bStadiumHaze;
                     break;
                 case 2:
                     useFog = glx_bFogSky;
@@ -386,7 +389,7 @@ static void glx_SendViews()
                 {
                     GXSetFog((GXFogType)fogtype[glx_FogType], glx_FogStart, glx_FogEnd, 0.25f, 130.0f, glx_GetFogColour());
 
-                    if (glx_bFogAdjust)
+                    if (glx_bFogAdjust && !glx_bStadiumHaze)
                     {
                         glViewGetProjectionMatrix((eGLView)view, projection);
                         // PORT: the frame is no longer 640 wide, and a fog table built for the wrong width saturates whole columns.
@@ -884,6 +887,20 @@ u32 glx_GetScaledXFBWidth()
  */
 void glx_SetFog(int type)
 {
+    glx_bStadiumHaze = type == 3;
+    if (glx_bStadiumHaze)
+    {
+        // Long linear fade for The Underground. UI, characters and skybox use separate views.
+        glx_bFog = true;
+        glx_bFogSky = false;
+        glx_FogType = 0;
+        glx_FogColour = { 96, 101, 146, 255 };
+        glx_FogIntensity = 1.f;
+        glx_FogStart = 42.f;
+        glx_FogEnd = 260.f;
+        return;
+    }
+
     if (type < 0)
     {
         glx_bFog = false;

@@ -158,3 +158,11 @@ adb pull /sdcard/Android/data/io.github.newcoke.strikers.settingspreview/files/s
 
 Use the [fork's issue tracker](https://github.com/keeganwhitacre/strikers-droid/issues)
 for Android reports. Include the APK build, device details, and steps to reproduce.
+
+## Experimental stadium haze
+
+On the `stadium-haze` branch, enable **Settings → Video → Stadium haze
+(experimental)**, restart the game, and choose **The Underground** for a
+Friendly. Check the far stands from the gameplay camera and from a goal
+replay. The setting defaults to off. Desktop builds of this branch can opt in
+with `stadium_haze = 1` in `strikers.ini`.

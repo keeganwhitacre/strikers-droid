@@ -63,6 +63,8 @@
 
     <string name="unlock_all">Unlock everything</string>
     <string name="unlock_all_help">Every stadium, team and cup.</string>
+    <string name="stadium_haze">Stadium haze (experimental)</string>
+    <string name="stadium_haze_help">Add a light blue-violet haze to distant scenery in The Underground. Applies next game launch.</string>
     <string name="hud">Performance panel</string>
     <string name="hud_help">FPS, frame cost, GPU, RAM and temperature, at the top of the screen.</string>
     <string name="game_note">Unlock everything is read when the game opens. The panel takes effect immediately.</string>
