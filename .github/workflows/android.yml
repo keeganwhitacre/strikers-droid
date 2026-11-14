@@ -2,16 +2,37 @@ name: Android APK
 
 on:
   push:
-    branches: [main, android-port, couch]
+    branches: [main]
     paths:
       - '.github/workflows/android.yml'
       - 'smstrikers-port/**'
   pull_request:
-    branches: [main, android-port]
+    branches: [main]
     paths:
       - '.github/workflows/android.yml'
       - 'smstrikers-port/**'
   workflow_dispatch:
+  # android-release.yml calls this with release: true, so a release is built by exactly the steps
+  # CI exercises on every push.
+  workflow_call:
+    inputs:
+      release:
+        description: 'Sign with the distribution key and refuse a debug-signed APK'
+        type: boolean
+        default: false
+      version-name:
+        description: 'versionName for the APK, such as 2.0.0-android.1'
+        type: string
+        default: ''
+    secrets:
+      ANDROID_KEYSTORE_BASE64:
+        required: false
+      ANDROID_KEYSTORE_PASSWORD:
+        required: false
+      ANDROID_KEY_ALIAS:
+        required: false
+      ANDROID_KEY_PASSWORD:
+        required: false
 
 permissions:
   contents: read
@@ -27,6 +48,10 @@ jobs:
     env:
       ANDROID_NDK_VERSION: '29.0.14206865'
       ANDROID_BUILD_TOOLS_VERSION: '35.0.1'
+      RELEASE: ${{ inputs.release && 'true' || 'false' }}
+      # The native version is deliberately not taken from a tag: the online handshake hashes the
+      # whole string, so it must stay the upstream version (configure-android.sh's default).
+      STRIKERS_VERSION: ''
     steps:
       - uses: actions/checkout@v7
         with:
@@ -49,6 +74,19 @@ jobs:
             "platforms;android-35" \
             "build-tools;$ANDROID_BUILD_TOOLS_VERSION"
 
+      - name: Decode the distribution key
+        if: env.RELEASE == 'true'
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::error::A release needs the ANDROID_KEYSTORE_BASE64 secret; see README-android.md"
+            exit 1
+          fi
+          keystore="$RUNNER_TEMP/distribution.keystore"
+          printf '%s' "$KEYSTORE_BASE64" | base64 -d > "$keystore"
+          echo "STRIKERS_ANDROID_KEYSTORE=$keystore" >> "$GITHUB_ENV"
+
       - name: Build native libraries
         run: |
           export ANDROID_NDK_HOME="$ANDROID_HOME/ndk/$ANDROID_NDK_VERSION"
@@ -64,7 +102,18 @@ jobs:
           if-no-files-found: ignore
 
       - name: Assemble APK
-        run: ./android/gradlew -p android --no-daemon assembleRelease
+        env:
+          STRIKERS_ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          STRIKERS_ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          STRIKERS_ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          VERSION_NAME: ${{ inputs.version-name }}
+        # run_number only grows within a workflow, which is what versionCode needs. CI and release
+        # builds are signed with different keys, so their numbers never have to be compared.
+        run: |
+          VERSION_NAME="${VERSION_NAME#android-v}"
+          ./android/gradlew -p android --no-daemon assembleRelease \
+            -Pstrikers.versionCode="${{ github.run_number }}" \
+            -Pstrikers.versionName="${VERSION_NAME:-2.0.0-ci.${{ github.run_number }}}"
 
       - name: Stage and verify strikers.apk
         run: |
@@ -72,6 +121,11 @@ jobs:
           sdk_tools="$ANDROID_HOME/build-tools/$ANDROID_BUILD_TOOLS_VERSION"
           install -D -m 0644 android/app/build/outputs/apk/release/app-release.apk "$apk"
           "$sdk_tools/apksigner" verify --verbose "$apk"
+          if [ "$RELEASE" = true ] && "$sdk_tools/apksigner" verify --print-certs "$apk" \
+              | grep -q 'CN=Android Debug'; then
+            echo "::error::The release APK is debug-signed"
+            exit 1
+          fi
           "$sdk_tools/zipalign" -c -P 16 4 "$apk"
           "$sdk_tools/aapt2" dump badging "$apk" | grep -Fx "native-code: 'arm64-v8a'"
           entries=$(unzip -Z1 "$apk")

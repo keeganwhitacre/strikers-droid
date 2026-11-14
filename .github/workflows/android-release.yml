@@ -1,0 +1,56 @@
+name: Android release
+
+# Draft a GitHub release with a signed APK. Tag the commit android-vX.Y.Z-android.N, for example
+# android-v2.0.0-android.1, where X.Y.Z is the upstream version the build plays online with.
+#
+# Kept apart from release.yml, which is upstream's: a v* tag there also sets STRIKERS_VERSION for
+# the native build, and the online handshake would then refuse every upstream peer.
+
+on:
+  push:
+    tags: ['android-v*']
+
+concurrency:
+  group: android-release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    uses: ./.github/workflows/android.yml
+    with:
+      release: true
+      version-name: ${{ github.ref_name }}
+    secrets: inherit
+
+  release:
+    name: draft release
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: strikers.apk
+          path: artifacts
+          skip-decompress: true
+
+      - name: Name the APK and write its checksum
+        working-directory: artifacts
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -eu
+          version="${TAG#android-v}"
+          mv strikers.apk "strikers-android-$version.apk"
+          sha256sum "strikers-android-$version.apk" > SHA256SUMS
+
+      - uses: softprops/action-gh-release@v3
+        with:
+          files: artifacts/*
+          fail_on_unmatched_files: true
+          draft: true
+          generate_release_notes: true
