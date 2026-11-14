@@ -157,20 +157,18 @@ For CI, add these repository secrets under **Settings → Secrets and variables 
 
 ## Releasing
 
-Run the device checklist below, then push a tag of the form
-`android-v<upstream version>-android.<n>`:
+Run the device checklist below. Then open **Actions → Android release → Run workflow**, leave the
+branch on `main`, and enter the version, such as `2.0.0-android.1`. Use the upstream version the
+build plays online with, then `-android.` and a number that goes up with each release.
 
-```sh
-git tag android-v2.0.0-android.1
-git push origin android-v2.0.0-android.1
-```
+The workflow builds the APK with the steps CI runs on every push, signs it with the
+distribution key, refuses a debug-signed result, creates the `android-v<version>` tag, and
+drafts a GitHub release with the APK and its checksum. Review the draft under **Releases** and
+publish it. Pushing an `android-v<version>` tag yourself does the same.
 
-`android-release.yml` builds the APK with the steps CI runs on every push, signs it with the
-distribution key, refuses a debug-signed result, and drafts a GitHub release with the APK and
-its checksum. Review the draft and publish it. The tag sets the APK's version name only. The
-native version stays at the upstream version in `tools/configure-android.sh`, because online
-play compares that string exactly. Upstream's `release.yml` and its `v*` tags are left
-untouched for the same reason.
+The version sets the APK's version name only. The native version stays at the upstream
+version in `tools/configure-android.sh`, because online play compares that string exactly.
+Upstream's `release.yml` and its `v*` tags are left untouched for the same reason.
 
 ## Device testing
 
