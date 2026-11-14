@@ -1,18 +1,25 @@
 package io.github.newcoke.strikers;
 
 import android.content.Context;
+import android.os.Build;
 import android.os.Bundle;
 import android.preference.Preference;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceCategory;
 import android.preference.PreferenceGroup;
 import android.preference.PreferenceScreen;
+import android.util.DisplayMetrics;
 import android.view.KeyEvent;
+import android.view.View;
+import android.view.WindowInsets;
+import android.view.WindowInsetsController;
 import android.widget.Toast;
 
 @SuppressWarnings("deprecation")
 abstract class NativeSettingsActivity extends PreferenceActivity {
     GamePreferences prefs;
+    // Drawn as a floating window over the game; set by the subclass before onCreate.
+    boolean popup;
 
     @Override
     protected void attachBaseContext(Context base) {
@@ -24,8 +31,37 @@ abstract class NativeSettingsActivity extends PreferenceActivity {
         super.onCreate(state);
         prefs = new GamePreferences(this);
         StrikersHome.writeDefaultConfig(StrikersHome.homeDir(this));
-        getListView().setFitsSystemWindows(true);
+        if (popup) {
+            // Most of a landscape screen, so a row still fits a title and a summary, with the game
+            // showing around the edges.
+            DisplayMetrics metrics = getResources().getDisplayMetrics();
+            getWindow().setLayout(Math.min(metrics.widthPixels, Math.round(metrics.widthPixels * 0.72f)),
+                    Math.round(metrics.heightPixels * 0.9f));
+            hideSystemBars();
+        } else {
+            getListView().setFitsSystemWindows(true);
+        }
         if (getActionBar() != null) getActionBar().setDisplayHomeAsUpEnabled(true);
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (popup && hasFocus) hideSystemBars();
+    }
+
+    // Over an immersive game, a popup that let the bars back would shift the game under it.
+    private void hideSystemBars() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            WindowInsetsController c = getWindow().getInsetsController();
+            if (c != null) {
+                c.hide(WindowInsets.Type.systemBars());
+                c.setSystemBarsBehavior(WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+            }
+        } else {
+            getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                    | View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+        }
     }
 
     final PreferenceScreen page() {

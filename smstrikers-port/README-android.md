@@ -75,7 +75,8 @@ They apply to all controllers, including the virtual touch pad, on the next
 game start. Stick layout, deadzone, and rumble also use shared controller settings.
 **Game default** clears the override for that option. During play, **Back**
 (the gesture, the navigation bar, or a handheld's Back key) opens Settings, as does **Guide** when
-Android delivers that button to the app. A controller's Select stays the Online button. **Settings → Game → Open straight into the game**
+Android delivers that button to the app. Settings then opens as a window over the paused match;
+Back, B or a tap outside returns to the game. A controller's Select stays the Online button. **Settings → Game → Open straight into the game**
 skips the launcher when you tap the app icon; turn it off there to get the launcher back, for
 example to change discs.
 
