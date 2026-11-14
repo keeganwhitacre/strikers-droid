@@ -23,6 +23,9 @@ final class GamePreferences {
 
     // Checks GitHub for a newer release once a day.
     static final String UPDATE_CHECK = "update_check";
+    static final String TOUCH_STYLE = "touch_style";
+    static final String TOUCH_STYLE_METAL = "metal";
+    static final String TOUCH_STYLE_CLASSIC = "classic";
 
     // App locale follows the system when its BCP 47 tag is empty.
     static final String APP_LANGUAGE = "app_language";
@@ -38,7 +41,9 @@ final class GamePreferences {
     }
 
     boolean getBoolean(String key) {
-        final boolean on = TOUCH_HAPTICS.equals(key) || UPDATE_CHECK.equals(key);
+        // On unless turned off: haptics, the update check, and Shoot, Pass and Lob on the buttons.
+        final boolean on = TOUCH_HAPTICS.equals(key) || UPDATE_CHECK.equals(key)
+                || TOUCH_ACTION_LABELS.equals(key);
         return preferences.getBoolean(key, on);
     }
 
@@ -61,7 +66,9 @@ final class GamePreferences {
 
     String getString(String key) {
         // The layout names the file its control positions are saved in, so it needs a real default.
-        return preferences.getString(key, TOUCH_LAYOUT.equals(key) ? TOUCH_STANDARD : "");
+        final String fallback = TOUCH_LAYOUT.equals(key) ? TOUCH_STANDARD
+                : TOUCH_STYLE.equals(key) ? TOUCH_STYLE_METAL : "";
+        return preferences.getString(key, fallback);
     }
 
     void setString(String key, String value) {

@@ -149,4 +149,7 @@
     <string name="share_logs">Share logs</string>
     <string name="share_logs_help">Send the game log, and the newest crash log, with a bug report.</string>
     <string name="no_logs">No logs yet. Start the game once first.</string>
+    <string name="touch_style">Touch style</string>
+    <string name="touch_style_metal">Metal</string>
+    <string name="touch_style_classic">Classic</string>
 </resources>

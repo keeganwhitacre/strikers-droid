@@ -82,6 +82,9 @@ game start. Stick layout, deadzone, and rumble also use shared controller settin
 **Game default** clears the override for that option. During play,
 press **Guide** to open Settings when Android delivers that button to the app.
 
+**Touch style** chooses Metal, with chrome-rimmed hexagon buttons, a larger Shoot and Pass, and
+action words on the buttons during a match, or Classic, the plain round buttons.
+
 **Touch layout** offers the existing Standard layout, smaller Compact phone
 controls, and Tablet reach, which brings the side controls inward. Size,
 opacity, deadzone, and optional controls can still be adjusted separately.

@@ -2,10 +2,13 @@ package io.github.newcoke.strikers;
 
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.LinearGradient;
+import android.graphics.Matrix;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.RectF;
+import android.graphics.Shader;
 import android.graphics.Typeface;
 import android.os.Build;
 import android.view.MotionEvent;
@@ -20,6 +23,20 @@ public class OverlayView extends View {
 
     private static final int CONTROL_ACCENT = 0xFFF2E9D4;
     private static final int SETTINGS_ACCENT = 0xFFFFC552;
+
+    // The metal style: chrome rims, dark panels, an electric accent for presses and action words.
+    private static final int METAL_PANEL = 0xFF111821;
+    private static final int METAL_ACCENT = 0xFFC6FF3D;
+    private static final int METAL_PRESSED_TEXT = 0xFF0B1206;
+    private static final int METAL_LABEL_IDLE = 0xFFB9C2CD;
+    // One unit-square gradient each, placed on a shape with a local matrix, so drawing allocates
+    // nothing.
+    private static final Shader CHROME = new LinearGradient(0f, 0f, 1f, 1f,
+            new int[] {0xFFF5F7FA, 0xFF8D97A3, 0xFFE2E6EB}, new float[] {0f, 0.55f, 1f},
+            Shader.TileMode.CLAMP);
+    private static final Shader GOLD = new LinearGradient(0f, 0f, 1f, 1f,
+            new int[] {0xFFFFE08A, 0xFFC98A12, 0xFFFFD36B}, new float[] {0f, 0.55f, 1f},
+            Shader.TileMode.CLAMP);
 
     private static final String[] PAD_KEYS = {"a", "b", "x", "y", "z", "start", "l", "r",
                 "dpad_up", "dpad_down", "dpad_left", "dpad_right"};
@@ -39,6 +56,7 @@ public class OverlayView extends View {
         final RectF bounds = new RectF();
         int pointerId = -1;  // Active Android pointer ID, or -1.
         float pressure;  // Animated press, from 0 to 1.
+        float hitScale = 1.25f;  // Touch radius beyond the drawn one, for round controls.
 
         Control(String label, Shape shape) {
             this.label = label;
@@ -49,7 +67,7 @@ public class OverlayView extends View {
             if (shape == Shape.CIRCLE || shape == Shape.STICK) {
                 final float dx = x - cx, dy = y - cy;
                 // Allow touches just outside the visible circle.
-                final float hitRadius = radius * 1.25f;
+                final float hitRadius = radius * hitScale;
                 return dx * dx + dy * dy <= hitRadius * hitRadius;
             }
             return bounds.contains(x, y);
@@ -60,6 +78,13 @@ public class OverlayView extends View {
     private final Paint controlPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint labelPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Path path = new Path();
+    private final Path innerPath = new Path();
+    private final Paint metalPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Matrix shaderMatrix = new Matrix();
+    private boolean metal;
+    private Typeface metalFont;
+    private final String shootWord, passWord, lobWord;
+    private final Typeface classicFont = Typeface.create("sans-serif-medium", Typeface.NORMAL);
 
     private float leftStickDx, leftStickDy, cStickDx, cStickDy;
     private Control leftStick, cStick;
@@ -141,7 +166,10 @@ public class OverlayView extends View {
         super(ctx);
         vibrator = (android.os.Vibrator) ctx.getSystemService(Context.VIBRATOR_SERVICE);
         setFocusable(false);
-        labelPaint.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        labelPaint.setTypeface(classicFont);
+        shootWord = ctx.getString(R.string.touch_shoot);
+        passWord = ctx.getString(R.string.touch_pass);
+        lobWord = ctx.getString(R.string.touch_lob);
         labelPaint.setTextAlign(Paint.Align.CENTER);
     }
 
@@ -160,6 +188,16 @@ public class OverlayView extends View {
         showDpad = prefs.getBoolean(GamePreferences.SHOW_DPAD);
         showCStick = prefs.getBoolean(GamePreferences.CSTICK);
         haptics = prefs.getBoolean(GamePreferences.TOUCH_HAPTICS);
+        metal = !GamePreferences.TOUCH_STYLE_CLASSIC.equals(prefs.getString(GamePreferences.TOUCH_STYLE));
+        if (metal && metalFont == null) {
+            try {
+                metalFont = Typeface.createFromAsset(getContext().getAssets(),
+                        "fonts/RussoOne-Regular.ttf");
+            } catch (RuntimeException e) {
+                metalFont = Typeface.create("sans-serif", Typeface.BOLD);
+            }
+        }
+        labelPaint.setTypeface(metal ? metalFont : classicFont);
         if (getWidth() > 0) {
             layoutControls(getWidth(), getHeight());
         }
@@ -243,10 +281,20 @@ public class OverlayView extends View {
         final float fx = right - r * 2.4f;
         final float fy = bottom - r * 2.4f;
         final float d = r * 1.55f;
-        controls.add(face("Y", fx, fy - d, r, TouchGamepad.Y));
-        controls.add(face("X", fx - d, fy, r, TouchGamepad.X));
-        controls.add(face("B", fx + d, fy, r, TouchGamepad.B));
-        controls.add(face("A", fx, fy + d, r, TouchGamepad.A));
+        if (metal) {
+            // An arc around a larger B (Shoot by default) and A (Pass), as drawn hexagons.
+            controls.add(face("Y", fx - 0.52f * r, fy - 2.67f * r, 0.95f * r, TouchGamepad.Y));
+            controls.add(face("X", fx - 2.75f * r, fy - 1.18f * r, 0.95f * r, TouchGamepad.X));
+            controls.add(face("B", fx + 0.72f * r, fy + 0.23f * r, 1.65f * r, TouchGamepad.B));
+            controls.add(face("A", fx - 2.25f * r, fy + 1.30f * r, 1.28f * r, TouchGamepad.A));
+            // The hexagons are bigger, so their touch margin is smaller, to keep neighbours apart.
+            for (int i = controls.size() - 4; i < controls.size(); i++) controls.get(i).hitScale = 1.08f;
+        } else {
+            controls.add(face("Y", fx, fy - d, r, TouchGamepad.Y));
+            controls.add(face("X", fx - d, fy, r, TouchGamepad.X));
+            controls.add(face("B", fx + d, fy, r, TouchGamepad.B));
+            controls.add(face("A", fx, fy + d, r, TouchGamepad.A));
+        }
 
         final float rm = u * 0.115f * scale;
         leftStick = new Control("", Shape.STICK);
@@ -276,7 +324,10 @@ public class OverlayView extends View {
             controls.add(face("▶", dcx + spacing, dcy, rd, TouchGamepad.RIGHT));
         }
 
-        final float centerButtonWidth = u * 0.115f * scale, centerButtonHeight = u * 0.052f * scale;
+        // The metal style's centre buttons are a size larger: the classic ones are hard to hit.
+        final float centerScale = metal ? 1.25f : 1f;
+        final float centerButtonWidth = u * 0.115f * scale * centerScale;
+        final float centerButtonHeight = u * 0.052f * scale * centerScale;
         final float settingsRadius = u * 0.036f * scale;
         final float centerGap = u * 0.028f;
 
@@ -401,6 +452,14 @@ public class OverlayView extends View {
             if (Math.abs(targetPressure - c.pressure) > 0.003f) postInvalidateOnAnimation();
             else c.pressure = targetPressure;
 
+            if (metal) {
+                switch (c.shape) {
+                    case RECTANGLE: drawMetalRectangle(canvas, c); break;
+                    case CIRCLE:    drawMetalHexagon(canvas, c);   break;
+                    case STICK:     drawMetalStick(canvas, c);     break;
+                }
+                continue;
+            }
             switch (c.shape) {
                 case RECTANGLE: drawRectangle(canvas, c); break;
                 case CIRCLE:    drawCircle(canvas, c);    break;
@@ -502,11 +561,16 @@ public class OverlayView extends View {
 
     private void drawLabel(Canvas canvas, String s, float cx, float cy,
                           float textSize, float pressure) {
+        drawLabel(canvas, s, cx, cy, textSize, Color.WHITE, alpha(216 + 39 * pressure));
+    }
+
+    private void drawLabel(Canvas canvas, String s, float cx, float cy, float textSize, int color,
+                           int alphaValue) {
         if (s == null || s.isEmpty()) return;
         labelPaint.setTextSize(textSize);
         if (s.length() > 3) labelPaint.setTextSize(textSize * 3f / s.length());
-        labelPaint.setColor(Color.WHITE);
-        labelPaint.setAlpha(alpha(216 + 39 * pressure));
+        labelPaint.setColor(color);
+        labelPaint.setAlpha(alphaValue);
         labelPaint.setShadowLayer(textSize * 0.18f, 0, textSize * 0.04f, 0x66000000);
         final Paint.FontMetrics fm = labelPaint.getFontMetrics();
         canvas.drawText(s, cx, cy - (fm.ascent + fm.descent) / 2f, labelPaint);
@@ -514,6 +578,181 @@ public class OverlayView extends View {
     }
 
     // A pointer stays with the control it pressed until release or cancellation.
+    // ---- Metal style --------------------------------------------------------------------------
+
+    private float rim(float size) {
+        return Math.max(2f * getResources().getDisplayMetrics().density, size * 0.075f);
+    }
+
+    private static int blend(int from, int to, float t) {
+        final float u = 1f - t;
+        return Color.argb(255,
+                Math.round(Color.red(from) * u + Color.red(to) * t),
+                Math.round(Color.green(from) * u + Color.green(to) * t),
+                Math.round(Color.blue(from) * u + Color.blue(to) * t));
+    }
+
+    // Chrome (or gold) across the box the shape sits in.
+    private void fillMetal(Canvas canvas, Path shape, float left, float top, float width,
+                           float height, Shader shader) {
+        shaderMatrix.setScale(width, height);
+        shaderMatrix.postTranslate(left, top);
+        shader.setLocalMatrix(shaderMatrix);
+        metalPaint.setShader(shader);
+        metalPaint.setStyle(Paint.Style.FILL);
+        metalPaint.setAlpha(alpha(255));
+        canvas.drawPath(shape, metalPaint);
+        metalPaint.setShader(null);
+    }
+
+    private void fillPanel(Canvas canvas, Path shape, float pressure) {
+        metalPaint.setShader(null);
+        metalPaint.setStyle(Paint.Style.FILL);
+        metalPaint.setColor(blend(METAL_PANEL, METAL_ACCENT, pressure));
+        metalPaint.setAlpha(alpha(230 + 25 * pressure));
+        canvas.drawPath(shape, metalPaint);
+    }
+
+    // A pressed control glows in the accent colour behind its rim.
+    private void glow(Canvas canvas, Path shape, float pressure) {
+        if (pressure <= 0.01f) return;
+        metalPaint.setShader(null);
+        metalPaint.setStyle(Paint.Style.STROKE);
+        metalPaint.setStrokeJoin(Paint.Join.ROUND);
+        metalPaint.setStrokeWidth(rim(0f) * 3f);
+        metalPaint.setColor(METAL_ACCENT);
+        metalPaint.setAlpha(alpha(110 * pressure));
+        canvas.drawPath(shape, metalPaint);
+        metalPaint.setStyle(Paint.Style.FILL);
+    }
+
+    // Action words (Shoot, Pass, Lob) in the accent; letters in white; dark on a lit panel.
+    private int metalLabelColor(String label, float pressure) {
+        final boolean action = label != null
+                && (label.equals(shootWord) || label.equals(passWord) || label.equals(lobWord));
+        return blend(action ? METAL_ACCENT : Color.WHITE, METAL_PRESSED_TEXT, pressure);
+    }
+
+    // A flat-topped hexagon with circumradius r: two vertices on the horizontal axis.
+    private static void hexagon(Path p, float cx, float cy, float r) {
+        final float h = r * 0.8660254f;
+        p.reset();
+        p.moveTo(cx - r, cy);
+        p.lineTo(cx - r * 0.5f, cy - h);
+        p.lineTo(cx + r * 0.5f, cy - h);
+        p.lineTo(cx + r, cy);
+        p.lineTo(cx + r * 0.5f, cy + h);
+        p.lineTo(cx - r * 0.5f, cy + h);
+        p.close();
+    }
+
+    private void drawMetalHexagon(Canvas canvas, Control c) {
+        final boolean menu = c.role == Role.MENU;
+        final float r = c.radius;
+        final float t = rim(r);
+        hexagon(path, c.cx, c.cy, r);
+        glow(canvas, path, c.pressure);
+        fillMetal(canvas, path, c.cx - r, c.cy - r, 2f * r, 2f * r, menu ? GOLD : CHROME);
+        // An inset of t from each edge takes t / cos 30° off the circumradius.
+        hexagon(innerPath, c.cx, c.cy, r - t * 1.1547f);
+        fillPanel(canvas, innerPath, menu ? 0f : c.pressure);
+        if (menu) {
+            drawSettingsIcon(canvas, c);
+            return;
+        }
+        drawLabel(canvas, c.label, c.cx, c.cy, r * 0.62f, metalLabelColor(c.label, c.pressure),
+                alpha(240 + 15 * c.pressure));
+    }
+
+    // Shoulders and the centre buttons lean outward, like the sides of a pitch seen in perspective.
+    private void parallelogram(Path p, RectF b, boolean leansLeft) {
+        final float slant = b.width() * 0.14f;
+        p.reset();
+        if (leansLeft) {
+            p.moveTo(b.left + slant, b.top);
+            p.lineTo(b.right, b.top);
+            p.lineTo(b.right - slant, b.bottom);
+            p.lineTo(b.left, b.bottom);
+        } else {
+            p.moveTo(b.left, b.top);
+            p.lineTo(b.right - slant, b.top);
+            p.lineTo(b.right, b.bottom);
+            p.lineTo(b.left + slant, b.bottom);
+        }
+        p.close();
+    }
+
+    private final RectF innerBounds = new RectF();
+
+    private void drawMetalRectangle(Canvas canvas, Control c) {
+        final RectF b = c.bounds;
+        final boolean leansLeft = b.centerX() < getWidth() / 2f;
+        final float t = rim(b.height());
+        parallelogram(path, b, leansLeft);
+        glow(canvas, path, c.pressure);
+        fillMetal(canvas, path, b.left, b.top, b.width(), b.height(), CHROME);
+        innerBounds.set(b.left + t * 1.4f, b.top + t, b.right - t * 1.4f, b.bottom - t);
+        parallelogram(innerPath, innerBounds, leansLeft);
+        fillPanel(canvas, innerPath, c.pressure);
+        // Sized to the panel's width rather than shrunk by letter count, so BACK and START read.
+        float textSize = b.height() * 0.44f;
+        if (c.label != null && !c.label.isEmpty()) {
+            labelPaint.setTextSize(textSize);
+            final float room = innerBounds.width() * 0.72f;
+            final float width = labelPaint.measureText(c.label);
+            if (width > room) textSize *= room / width;
+            // drawLabel shrinks labels past three letters; undo that, the size already fits.
+            if (c.label.length() > 3) textSize *= c.label.length() / 3f;
+        }
+        drawLabel(canvas, c.label, b.centerX(), b.centerY(), textSize,
+                metalLabelColor(c.label, c.pressure), alpha(240 + 15 * c.pressure));
+    }
+
+    private void drawMetalStick(Canvas canvas, Control c) {
+        final boolean isLeftStick = c == leftStick;
+        final float dx = isLeftStick ? leftStickDx : cStickDx;
+        final float dy = isLeftStick ? leftStickDy : cStickDy;
+        final float r = c.radius;
+        final float t = rim(r * 0.6f);
+
+        // The well: a chrome ring around a darkened floor.
+        path.reset();
+        path.addCircle(c.cx, c.cy, r, Path.Direction.CW);
+        fillMetal(canvas, path, c.cx - r, c.cy - r, 2f * r, 2f * r, CHROME);
+        innerPath.reset();
+        innerPath.addCircle(c.cx, c.cy, r - t, Path.Direction.CW);
+        metalPaint.setShader(null);
+        metalPaint.setStyle(Paint.Style.FILL);
+        metalPaint.setColor(METAL_PANEL);
+        metalPaint.setAlpha(alpha(150));
+        canvas.drawPath(innerPath, metalPaint);
+
+        // The knob: chrome rim, dark cap with a small hexagon, lit while held.
+        final float maxTravel = r * 0.52f;
+        final float dist = (float) Math.hypot(dx, dy);
+        final float k = dist > maxTravel ? maxTravel / dist : 1f;
+        final float kx = c.cx + dx * k, ky = c.cy + dy * k, kr = r * 0.56f;
+        path.reset();
+        path.addCircle(kx, ky, kr, Path.Direction.CW);
+        glow(canvas, path, c.pressure);
+        fillMetal(canvas, path, kx - kr, ky - kr, 2f * kr, 2f * kr, CHROME);
+        innerPath.reset();
+        innerPath.addCircle(kx, ky, kr - t, Path.Direction.CW);
+        fillPanel(canvas, innerPath, c.pressure);
+        if (c.label != null && !c.label.isEmpty()) {
+            drawLabel(canvas, c.label, kx, ky, kr * 0.7f, metalLabelColor(c.label, c.pressure),
+                    alpha(240));
+        } else {
+            hexagon(innerPath, kx, ky, kr * 0.42f);
+            metalPaint.setStyle(Paint.Style.STROKE);
+            metalPaint.setStrokeWidth(t * 0.8f);
+            metalPaint.setColor(blend(METAL_LABEL_IDLE, METAL_PRESSED_TEXT, c.pressure));
+            metalPaint.setAlpha(alpha(230));
+            canvas.drawPath(innerPath, metalPaint);
+            metalPaint.setStyle(Paint.Style.FILL);
+        }
+    }
+
     @Override
     public boolean onTouchEvent(MotionEvent e) {
         if (editing) return editTouch(e);
