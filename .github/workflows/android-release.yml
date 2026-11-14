@@ -1,7 +1,10 @@
 name: Android release
 
-# Draft a GitHub release with a signed APK. Tag the commit android-vX.Y.Z-android.N, for example
-# android-v2.0.0-android.1, where X.Y.Z is the upstream version the build plays online with.
+# Draft a GitHub release with a signed APK, in either of two ways:
+#   - Actions → Android release → Run workflow on main, entering a version such as 2.0.0-android.1;
+#     the workflow creates the android-v<version> tag once the APK has built.
+#   - Push a tag android-v<version> yourself.
+# The version's X.Y.Z should be the upstream version the build plays online with.
 #
 # Kept apart from release.yml, which is upstream's: a v* tag there also sets STRIKERS_VERSION for
 # the native build, and the online handshake would then refuse every upstream peer.
@@ -9,29 +12,79 @@ name: Android release
 on:
   push:
     tags: ['android-v*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version, such as 2.0.0-android.1 (tagged android-v<version>)'
+        required: true
+        type: string
 
 concurrency:
-  group: android-release-${{ github.ref }}
+  group: android-release-${{ inputs.version || github.ref }}
   cancel-in-progress: false
 
 permissions:
   contents: read
 
 jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+    steps:
+      - id: tag
+        env:
+          EVENT: ${{ github.event_name }}
+          VERSION: ${{ inputs.version }}
+          REF: ${{ github.ref }}
+          REF_NAME: ${{ github.ref_name }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -eu
+          if [ "$EVENT" = push ]; then
+            echo "tag=$REF_NAME" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [ "$REF" != refs/heads/main ]; then
+            echo "::error::Run the release from main"
+            exit 1
+          fi
+          if ! printf '%s' "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$'; then
+            echo "::error::'$VERSION' is not a version such as 2.0.0-android.1"
+            exit 1
+          fi
+          tag="android-v$VERSION"
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$tag" >/dev/null 2>&1; then
+            echo "::error::$tag already exists; choose the next version"
+            exit 1
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
   build:
+    needs: prepare
     uses: ./.github/workflows/android.yml
     with:
       release: true
-      version-name: ${{ github.ref_name }}
+      version-name: ${{ needs.prepare.outputs.tag }}
     secrets: inherit
 
   release:
     name: draft release
-    needs: build
+    needs: [prepare, build]
     runs-on: ubuntu-24.04
     permissions:
       contents: write
+    env:
+      TAG: ${{ needs.prepare.outputs.tag }}
     steps:
+      # A tag made with the workflow's own token starts no further workflow runs, so this does not
+      # build the release a second time.
+      - name: Create the tag
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api "repos/$GITHUB_REPOSITORY/git/refs" -f ref="refs/tags/$TAG" -f sha="$GITHUB_SHA"
+
       - uses: actions/download-artifact@v8
         with:
           name: strikers.apk
@@ -40,8 +93,6 @@ jobs:
 
       - name: Name the APK and write its checksum
         working-directory: artifacts
-        env:
-          TAG: ${{ github.ref_name }}
         run: |
           set -eu
           version="${TAG#android-v}"
@@ -50,6 +101,7 @@ jobs:
 
       - uses: softprops/action-gh-release@v3
         with:
+          tag_name: ${{ env.TAG }}
           files: artifacts/*
           fail_on_unmatched_files: true
           draft: true
