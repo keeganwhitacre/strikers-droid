@@ -4,7 +4,7 @@ A native Android port of *Super Mario Strikers* for phones, tablets, and handhel
 
 ## Get the Android build
 
-Use an ARM64 device running Android 9 or newer with Vulkan support. Download the APK from [Releases](https://github.com/keeganwhitacre/strikers-droid/releases). Untested builds of every `main` commit are under [Android APK builds](https://github.com/keeganwhitacre/strikers-droid/actions/workflows/android.yml?query=branch%3Amain); GitHub requires sign-in to download them. The [Android guide](smstrikers-port/README-android.md) covers installation, disc setup, building from source, and device testing.
+Use an ARM64 device running Android 9 or newer with Vulkan support. Download the APK from [Releases](https://github.com/keewhi/strikers-droid/releases). Untested builds of every `main` commit are under [Android APK builds](https://github.com/keewhi/strikers-droid/actions/workflows/android.yml?query=branch%3Amain); GitHub requires sign-in to download them. The [Android guide](smstrikers-port/README-android.md) covers installation, disc setup, building from source, and device testing.
 
 ## Features
 
@@ -18,7 +18,7 @@ Use an ARM64 device running Android 9 or newer with Vulkan support. Download the
 
 This fork brings [new-coke’s Strikers port](https://github.com/new-coke/strikers) to Android using [Luis Santos’s Android port](https://github.com/luisxl15/Strikers-Android-Port) as its starting point. The game is based on the community decompilation led by [Yannick Suter](https://github.com/yannicksuter) and uses [Aurora](https://github.com/encounter/aurora) for platform support.
 
-Report Android issues in the [fork’s issue tracker](https://github.com/keeganwhitacre/strikers-droid/issues). Include your device, Android version, APK build, and steps to reproduce.
+Report Android issues in the [fork’s issue tracker](https://github.com/keewhi/strikers-droid/issues). Include your device, Android version, APK build, and steps to reproduce.
 
 <details>
 <summary>Licensing and third-party notices</summary>

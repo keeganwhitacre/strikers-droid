@@ -123,10 +123,10 @@ jobs:
           # The release keeps the name android-release.yml downloads; a test build says what it is.
           if [ "$RELEASE" = true ]; then
             apk="$RUNNER_TEMP/strikers-android/strikers.apk"
-            package=io.github.keeganwhitacre.strikers
+            package=io.github.keewhi.strikers
           else
             apk="$RUNNER_TEMP/strikers-android/strikers-test.apk"
-            package=io.github.keeganwhitacre.strikers.test
+            package=io.github.keewhi.strikers.test
           fi
           echo "APK=$apk" >> "$GITHUB_ENV"
           sdk_tools="$ANDROID_HOME/build-tools/$ANDROID_BUILD_TOOLS_VERSION"

@@ -9,16 +9,16 @@ and rollback code come from [Strikers upstream](https://github.com/new-coke/stri
 - Use an ARM64 device running Android 9 or later with Vulkan support.
 - Use data from your own US, European, or Japanese copy of Super Mario Strikers.
   The APK contains no game assets.
-- Download the APK from [Releases](https://github.com/keeganwhitacre/strikers-droid/releases),
+- Download the APK from [Releases](https://github.com/keewhi/strikers-droid/releases),
   or build it below. To try unreleased changes, see [Test builds](#test-builds).
 
-The app appears as **Strikers** with the package ID `io.github.keeganwhitacre.strikers`.
+The app appears as **Strikers** with the package ID `io.github.keewhi.strikers`.
 Android requires the same signing key for an in-place update, so a build from
-[Releases](https://github.com/keeganwhitacre/strikers-droid/releases) updates only
-another release build. CI builds use a debug key and are intended for testing.
+[Releases](https://github.com/keewhi/strikers-droid/releases) updates only
+another release build. Test builds are a separate app; see [Test builds](#test-builds).
 
-Builds before the package ID change installed as `io.github.newcoke.strikers.settingspreview`
-and appear as a separate app. Copy `strikers.ini`, texture packs and any extracted `files`
+Earlier builds, including release 2.0.0-android.1, installed under other package IDs and appear
+as a separate app. Copy `strikers.ini`, texture packs and any extracted `files`
 directory from that app's folder under `Android/data/` into the new one, then pick your disc
 image again. Memory card saves live in app-private storage and cannot be copied over; uninstall
 the old app once you no longer need it.
@@ -26,9 +26,9 @@ the old app once you no longer need it.
 ## Test builds
 
 Every `main` commit and every pull request also builds `strikers-test.apk` under its
-[Android APK workflow run](https://github.com/keeganwhitacre/strikers-droid/actions/workflows/android.yml)
+[Android APK workflow run](https://github.com/keewhi/strikers-droid/actions/workflows/android.yml)
 (sign in, open the run, download it under **Artifacts**). It installs as a separate app,
-**Strikers Test** (`io.github.keeganwhitacre.strikers.test`), beside the released Strikers, with
+**Strikers Test** (`io.github.keewhi.strikers.test`), beside the released Strikers, with
 its own saves, settings and disc selection. Test builds share a key, so a newer one installs over
 an older one. Installing an older run over a newer one fails; uninstall Strikers Test first.
 Local builds are test builds too, unless Gradle gets `-Pstrikers.channel=release`.
@@ -62,7 +62,7 @@ remembers the selection. Press **Play** to read the image in place. If a storage
 only stream the image, download it locally before choosing it.
 
 For an extracted disc, place its `files` directory under
-`Android/data/io.github.keeganwhitacre.strikers/files/` with USB or ADB. The launcher
+`Android/data/io.github.keewhi.strikers/files/` with USB or ADB. The launcher
 also finds supported images in that app-specific directory when no image is selected.
 
 ## Settings and controls
@@ -212,8 +212,8 @@ log through Android's share sheet. With a computer, capture Android's log and th
 
 ```sh
 adb logcat -s strikers SDL DEBUG AndroidRuntime
-adb pull /sdcard/Android/data/io.github.keeganwhitacre.strikers/files/strikers-log.txt
+adb pull /sdcard/Android/data/io.github.keewhi.strikers/files/strikers-log.txt
 ```
 
-Use the [fork's issue tracker](https://github.com/keeganwhitacre/strikers-droid/issues)
+Use the [fork's issue tracker](https://github.com/keewhi/strikers-droid/issues)
 for Android reports. Include the APK build, device details, and steps to reproduce.

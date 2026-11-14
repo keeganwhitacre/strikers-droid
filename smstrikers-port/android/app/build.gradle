@@ -23,8 +23,8 @@ android {
     defaultConfig {
         // The fork's own ID. The Java package (namespace above) stays io.github.newcoke.strikers
         // because the JNI entry points in src/platform/android are named after it.
-        applicationId releaseChannel ? 'io.github.keeganwhitacre.strikers'
-                : 'io.github.keeganwhitacre.strikers.test'
+        applicationId releaseChannel ? 'io.github.keewhi.strikers'
+                : 'io.github.keewhi.strikers.test'
         resValue 'string', 'app_name', releaseChannel ? 'Strikers' : 'Strikers Test'
         // 28, because that is what Aurora's prebuilt Dawn is compiled against; the game itself
         // asks for nothing newer.
