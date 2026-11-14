@@ -63,6 +63,12 @@
             android:theme="@style/Theme.Strikers.Settings" />
 
         <activity
+            android:name=".SettingsPopupActivity"
+            android:exported="false"
+            android:label="@string/settings"
+            android:theme="@style/Theme.Strikers.SettingsPopup" />
+
+        <activity
             android:name=".DriverSettingsActivity"
             android:exported="false"
             android:label="@string/video_driver"
@@ -74,12 +80,14 @@
             android:label="@string/texture_packs"
             android:theme="@style/Theme.Strikers.Settings" />
 
+        <!-- singleTask, not singleInstance: still one game, but Settings opened from it joins its
+             task, so closing Settings returns to the game rather than to the launcher. -->
         <activity
             android:name=".StrikersActivity"
             android:exported="false"
             android:label="@string/app_name"
             android:alwaysRetainTaskState="true"
-            android:launchMode="singleInstance"
+            android:launchMode="singleTask"
             android:screenOrientation="sensorLandscape"
             android:preferMinimalPostProcessing="true"
             android:configChanges="layoutDirection|locale|grammaticalGender|fontScale|fontWeightAdjustment|orientation|uiMode|screenLayout|screenSize|smallestScreenSize|keyboard|keyboardHidden|navigation">

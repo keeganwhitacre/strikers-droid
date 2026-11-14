@@ -112,7 +112,7 @@ public class StrikersActivity extends SDLActivity {
 
     private void openSettings() {
         if (overlay != null) overlay.releaseAll();
-        startActivity(new Intent(this, SettingsActivity.class));
+        startActivity(new Intent(this, SettingsPopupActivity.class));
     }
 
     @Override

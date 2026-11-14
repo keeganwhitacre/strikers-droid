@@ -12,4 +12,11 @@
         <item name="android:windowLightNavigationBar">false</item>
     </style>
     <style name="Theme.Strikers.Settings" parent="@android:style/Theme.Material" />
+    <!-- Settings over a running match: a floating window, the game dimmed behind it. A tap outside
+         closes it, as Back and B do. -->
+    <style name="Theme.Strikers.SettingsPopup" parent="@android:style/Theme.Material.Dialog">
+        <item name="android:windowCloseOnTouchOutside">true</item>
+        <item name="android:backgroundDimEnabled">true</item>
+        <item name="android:backgroundDimAmount">0.55</item>
+    </style>
 </resources>
