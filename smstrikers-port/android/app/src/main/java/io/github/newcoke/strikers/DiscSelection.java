@@ -3,10 +3,8 @@ package io.github.newcoke.strikers;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.database.Cursor;
 import android.net.Uri;
 import android.os.ParcelFileDescriptor;
-import android.provider.OpenableColumns;
 import android.system.ErrnoException;
 import android.system.Os;
 import android.system.OsConstants;
@@ -33,14 +31,7 @@ final class DiscSelection {
     }
 
     static String displayName(Context context, Uri uri) {
-        try (Cursor cursor = context.getContentResolver().query(uri,
-                new String[] {OpenableColumns.DISPLAY_NAME}, null, null, null)) {
-            if (cursor != null && cursor.moveToFirst()) {
-                String name = cursor.getString(0);
-                if (name != null && !name.isEmpty()) return name;
-            }
-        }
-        return context.getString(R.string.disc_image);
+        return Documents.displayName(context, uri, context.getString(R.string.disc_image));
     }
 
     static void remember(Context context, Uri uri, String name, int readGrant) {
