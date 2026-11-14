@@ -146,4 +146,7 @@
     <string name="update_later">Later</string>
     <string name="update_skip">Skip this version</string>
     <string name="haze_diagnostic">Diagnostic (magenta)</string>
+    <string name="share_logs">Share logs</string>
+    <string name="share_logs_help">Send the game log, and the newest crash log, with a bug report.</string>
+    <string name="no_logs">No logs yet. Start the game once first.</string>
 </resources>
