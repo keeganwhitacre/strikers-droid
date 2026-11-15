@@ -185,7 +185,7 @@ public class OverlayView extends View {
         showDpad = prefs.getBoolean(GamePreferences.SHOW_DPAD);
         showCStick = prefs.getBoolean(GamePreferences.CSTICK);
         haptics = prefs.getBoolean(GamePreferences.TOUCH_HAPTICS);
-        setAlpha(editing ? Math.max(opacity, 0.85f) : opacity);
+        setAlpha(editing ? Math.max(opacity, 0.35f) : opacity);
         if (getWidth() > 0) layoutControls(getWidth(), getHeight());
         invalidate();
     }
@@ -481,7 +481,7 @@ public class OverlayView extends View {
         canvas.drawCircle(c.cx, c.cy, r + dp, stroke);
 
         // Lit from the upper left, like the menu panels.
-        fill.setShader(new LinearGradient(c.cx - r * 0.34f, c.cy - r * 0.94f, c.cx + r * 0.34f, c.cy + r * 0.94f,
+        shade(new LinearGradient(c.cx - r * 0.34f, c.cy - r * 0.94f, c.cx + r * 0.34f, c.cy + r * 0.94f,
                 new int[]{look[0], look[1], look[2]}, new float[]{0f, look == PLAIN ? 0.7f : 0.62f, 1f},
                 Shader.TileMode.CLAMP));
         canvas.drawCircle(c.cx, c.cy, r, fill);
@@ -563,7 +563,7 @@ public class OverlayView extends View {
         canvas.drawPath(clip, stroke);
 
         fill.setPathEffect(corners);
-        fill.setShader(new LinearGradient(0, c.cy - hh, 0, c.cy + hh, NAVY_TOP, NAVY_BOTTOM, Shader.TileMode.CLAMP));
+        shade(new LinearGradient(0, c.cy - hh, 0, c.cy + hh, NAVY_TOP, NAVY_BOTTOM, Shader.TileMode.CLAMP));
         canvas.drawPath(path, fill);
         fill.setShader(null);
         if (c.pressure > 0f) {
@@ -641,7 +641,7 @@ public class OverlayView extends View {
         final int rim = c.pressure > 0.5f ? ORANGE : CYAN;
 
         octagon(path, c.cx, c.cy, half);
-        fill.setShader(new RadialGradient(c.cx, c.cy, half, 0x8C0D1E40, 0xD1061026, Shader.TileMode.CLAMP));
+        shade(new RadialGradient(c.cx, c.cy, half, 0x8C0D1E40, 0xD1061026, Shader.TileMode.CLAMP));
         canvas.drawPath(path, fill);
         fill.setShader(null);
         stroke.setStrokeWidth(dp * 2f);
@@ -657,7 +657,7 @@ public class OverlayView extends View {
         final float k = dist > maxTravel ? maxTravel / dist : 1f;
         final float kx = c.cx + dx * k, ky = c.cy + dy * k, kr = half * 0.39f;
         fill.setShadowLayer(dp * 6f, 0, dp * 3f, 0x73000000);
-        fill.setShader(new LinearGradient(kx - kr * 0.34f, ky - kr * 0.94f, kx + kr * 0.34f, ky + kr * 0.94f,
+        shade(new LinearGradient(kx - kr * 0.34f, ky - kr * 0.94f, kx + kr * 0.34f, ky + kr * 0.94f,
                 0xFF25498A, 0xFF0C1C40, Shader.TileMode.CLAMP));
         canvas.drawCircle(kx, ky, kr, fill);
         fill.setShader(null);
@@ -676,6 +676,13 @@ public class OverlayView extends View {
         }
         stroke.setStrokeCap(Paint.Cap.BUTT);
         if (!c.label.isEmpty()) drawText(canvas, c.label, kx, ky, kr * 0.7f);
+    }
+
+    // A shader draws at the paint colour's opacity, so set it back to opaque first: the gloss and
+    // press overlays leave it low, which faded every gradient drawn after them.
+    private void shade(Shader shader) {
+        fill.setColor(Color.WHITE);
+        fill.setShader(shader);
     }
 
     // The orange ring and glow of a pressed button.
@@ -858,7 +865,12 @@ public class OverlayView extends View {
 
     void enableEditing() {
         editing = true;
-        setAlpha(Math.max(opacity, 0.85f));
+        setAlpha(Math.max(opacity, 0.35f));
+    }
+
+    void setOpacity(float value) {
+        opacity = value;
+        setAlpha(editing ? Math.max(opacity, 0.35f) : opacity);
     }
 
     void setEditListener(EditListener listener) {
