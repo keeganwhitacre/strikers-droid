@@ -54,6 +54,8 @@
     <string name="unlock_all_help">Todos los estadios, equipos y copas.</string>
     <string name="hud">Panel de rendimiento</string>
     <string name="hud_help">FPS, coste del fotograma, GPU, RAM y temperatura, arriba en la pantalla.</string>
+    <string name="auto_launch">Abrir directamente el juego</string>
+    <string name="auto_launch_help">El icono de la app inicia el juego. Atrás durante la partida abre los ajustes.</string>
     <string name="game_note">Desbloquear todo lo lee el juego al abrir. El panel vale al momento.</string>
 
     <string name="driver_system">El del sistema</string>

@@ -64,6 +64,8 @@
     <string name="unlock_all_help">Every stadium, team and cup.</string>
     <string name="hud">Performance panel</string>
     <string name="hud_help">FPS, frame cost, GPU, RAM and temperature, at the top of the screen.</string>
+    <string name="auto_launch">Open straight into the game</string>
+    <string name="auto_launch_help">Tapping the app icon starts the game. Back during play opens Settings.</string>
     <string name="game_note">Unlock everything is read when the game opens. The panel takes effect immediately.</string>
 
     <string name="driver_system">The system one</string>

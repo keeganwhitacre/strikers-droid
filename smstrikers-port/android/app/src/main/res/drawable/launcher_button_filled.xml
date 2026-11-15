@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A Material 3 button: a full pill, with a ripple in the label colour. Focus also gets an outline,
+     because the ripple's own focus tint is too faint to follow from the sofa with a controller. -->
+<ripple xmlns:android="http://schemas.android.com/apk/res/android"
+    android:color="@color/launcher_filled_ripple">
+    <item>
+        <selector>
+            <item android:state_focused="true">
+                <shape android:shape="rectangle">
+                    <corners android:radius="100dp" />
+                    <solid android:color="@color/launcher_filled_bg" />
+                    <stroke android:width="3dp" android:color="@color/launcher_on_surface" />
+                </shape>
+            </item>
+            <item>
+                <shape android:shape="rectangle">
+                    <corners android:radius="100dp" />
+                    <solid android:color="@color/launcher_filled_bg" />
+                </shape>
+            </item>
+        </selector>
+    </item>
+</ripple>

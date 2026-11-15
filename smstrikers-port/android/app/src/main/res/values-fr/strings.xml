@@ -54,6 +54,8 @@
     <string name="unlock_all_help">Tous les stades, équipes et coupes.</string>
     <string name="hud">Panneau de performance</string>
     <string name="hud_help">FPS, coût de l\'image, GPU, RAM et température, en haut de l\'écran.</string>
+    <string name="auto_launch">Ouvrir directement le jeu</string>
+    <string name="auto_launch_help">L\'icône de l\'appli lance le jeu. Retour pendant une partie ouvre les paramètres.</string>
     <string name="game_note">Tout débloquer est lu à l\'ouverture du jeu. Le panneau s\'applique tout de suite.</string>
 
     <string name="driver_system">Celui du système</string>

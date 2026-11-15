@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="launcher_surface">#FF101510</color>
+    <color name="launcher_on_surface">#FFDFE4DC</color>
+    <color name="launcher_on_surface_variant">#FFC0C9BE</color>
+    <color name="launcher_primary">#FF8AD79A</color>
+    <color name="launcher_on_primary">#FF00391A</color>
+    <color name="launcher_secondary_container">#FF2D4E35</color>
+    <color name="launcher_on_secondary_container">#FFD2E8D3</color>
+</resources>
