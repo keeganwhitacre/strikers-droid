@@ -17,6 +17,11 @@
 #include <SDL3/SDL_joystick.h>
 #include <SDL3/SDL_stdinc.h>
 
+#include "Game/Ball.h"
+#include "Game/Player.h"
+#include "Game/Team.h"
+#include "NL/globalpad.h"
+
 namespace {
 
 // The state the overlay last sent, and the only thing that crosses between the
@@ -354,10 +359,40 @@ Java_io_github_newcoke_strikers_OverlayView_nativeBindings(JNIEnv* env, jclass, 
 }
 
 static std::atomic<bool> s_matchLabelsActive{false};
+static std::atomic<bool> s_touchAttacking{false};
+
+// Whether the team the touch pad plays for has the ball, so the overlay can caption A, B and Y
+// for attack (pass, shoot, deke) or defence (switch, tackle, hit). A loose ball counts as
+// defending: with nobody on the ball, A switches player.
+static bool touch_team_attacking()
+{
+    if (g_pBall == nullptr || g_pBall->m_pOwner == nullptr || g_pTeams[0] == nullptr || g_pTeams[1] == nullptr)
+        return false;
+    for (u32 port = 0; port < PAD_CHANMAX; ++port)
+    {
+        const s32 index = PADGetIndexForPort(port);
+        SDL_Gamepad* pad = index < 0 ? nullptr : PADGetSDLGamepadForIndex((u32)index);
+        if (pad == nullptr || SDL_GetGamepadID(pad) != s_virtualId)
+            continue;
+        cGlobalPad* touchPad = cPadManager::GetPad((int)port);
+        for (int t = 0; t < 2; ++t)
+            if (touchPad != nullptr && g_pTeams[t]->GetControlledPlayer(touchPad) != nullptr)
+                return g_pBall->m_pOwner->GetTeam() == g_pTeams[t];
+        return false;
+    }
+    return false;
+}
 
 void PortAndroidSetTouchMatchActive(bool active)
 {
     s_matchLabelsActive.store(active, std::memory_order_relaxed);
+    s_touchAttacking.store(active && s_virtualId != 0 && touch_team_attacking(), std::memory_order_relaxed);
+}
+
+extern "C" JNIEXPORT jboolean JNICALL
+Java_io_github_newcoke_strikers_OverlayView_nativeAttacking(JNIEnv*, jclass)
+{
+    return s_touchAttacking.load(std::memory_order_relaxed) ? JNI_TRUE : JNI_FALSE;
 }
 
 extern "C" JNIEXPORT jboolean JNICALL
