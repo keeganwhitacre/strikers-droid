@@ -41,7 +41,8 @@ final class GamePreferences {
     }
 
     boolean getBoolean(String key) {
-        final boolean on = TOUCH_HAPTICS.equals(key) || UPDATE_CHECK.equals(key);
+        // Match action labels are on by default: the captions are how the touch buttons say what they do.
+        final boolean on = TOUCH_HAPTICS.equals(key) || UPDATE_CHECK.equals(key) || TOUCH_ACTION_LABELS.equals(key);
         return preferences.getBoolean(key, on);
     }
 

@@ -90,9 +90,20 @@ Battery uses the original render scale and a 30 FPS cap. Balanced uses a
 scale and restores the engine’s display-based limiter. All three turn MSAA
 off and leave VSync and anisotropic filtering available as manual settings.
 
-In **Move touch controls**, select a control and use **Smaller** or **Larger**
-to resize it individually. The editor saves size and position per layout.
-Enable **Match action labels** to show Shoot, Pass, and the Lob modifier during active play.
+In **Edit touch controls**, drag a control to move it, pinch to resize it and
+twist two fingers to rotate it. Tapping a control opens a toolbar with its size
+(50–200%), angle, **Hide** and **Reset**. The face buttons move, resize and
+rotate as one group; each d-pad arrow is its own control. Hidden controls wait
+in the **Hidden** tray: LB, L3, R3, the d-pad and the C-stick start there, since
+a match uses none of them. The editor saves each layout separately.
+
+With **Match action labels** on, each button shows what it does during play,
+following possession: A, B and Y read Pass, Shoot and Deke while your team has
+the ball, and Switch, Tackle and Hit while it doesn't. X uses an item, Z (beside
+it) cycles items, holding L aims a lead pass or chip shot, and R is turbo.
+Menus show plain GameCube letters. The controls are drawn in code in the style
+of the game's menus, set in Barlow Condensed (SIL Open Font License; the licence
+ships in the APK under `assets/licenses`).
 In **Controller bindings**, the Settings shortcut can also use L3 or R3.
 That stick click is reserved for Settings while the shortcut is enabled.
 
