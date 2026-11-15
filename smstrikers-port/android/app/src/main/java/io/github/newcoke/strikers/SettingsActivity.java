@@ -55,6 +55,10 @@ public class SettingsActivity extends NativeSettingsActivity {
                         getString(R.string.haze_strong)},
                 testApp ? new String[]{"", "subtle", "strong", "diagnostic"}
                         : new String[]{"", "subtle", "strong"}, "");
+        choice(group, R.string.film_look, "film_look",
+                new String[]{getString(R.string.off), getString(R.string.haze_subtle),
+                        getString(R.string.haze_strong)},
+                new String[]{"", "subtle", "strong"}, "");
         row(group, R.string.video_driver, R.string.drivers_restart_note,
                 () -> startActivity(new Intent(this, DriverSettingsActivity.class)));
         row(group, R.string.texture_packs, R.string.texture_packs_summary,

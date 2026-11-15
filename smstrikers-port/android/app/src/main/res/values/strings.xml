@@ -151,4 +151,5 @@
     <string name="haze_subtle">Subtle</string>
     <string name="haze_strong">Strong</string>
     <string name="haze_diagnostic">Diagnostic (magenta)</string>
+    <string name="film_look">Film look</string>
 </resources>

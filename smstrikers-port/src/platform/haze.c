@@ -8,6 +8,8 @@
 //   haze_end     = distance
 //   haze_curve   = linear | exp | exp2
 //   haze_sky     = 0 | 1
+//   film_look    = off | subtle | strong  (or 0, 1, 2)
+//   grade_saturation, grade_contrast, grade_lift, film_grain, vignette = number  (overrides)
 // The three stadiums with retail fog get the haze in their retail fog's colour instead.
 // The overrides apply to whichever stadium is loaded, which is what tuning one stadium needs.
 
@@ -59,13 +61,24 @@ static const float kHalfStrong = 35.0f;
 static const int kCurve = PORT_HAZE_EXP;
 
 static PortHaze s_haze;
+static PortPostFx s_postfx;
 
 // The haze keys as strikers.ini has them now. The config loader exported the file to the
 // environment once, at startup; this re-reads just these keys so later edits count.
-#define HAZE_KEYS 7
-static const char* const kKeys[HAZE_KEYS] = {
-    "stadium_haze", "haze_color", "haze_start", "haze_end", "haze_sky", "haze_curve", NULL
-};
+#define HAZE_KEYS 13
+static const char* const kKeys[HAZE_KEYS] = { "stadium_haze",
+                                              "haze_color",
+                                              "haze_start",
+                                              "haze_end",
+                                              "haze_sky",
+                                              "haze_curve",
+                                              "film_look",
+                                              "grade_saturation",
+                                              "grade_contrast",
+                                              "grade_lift",
+                                              "film_grain",
+                                              "vignette",
+                                              NULL };
 static char s_values[HAZE_KEYS][64];
 static int s_found[HAZE_KEYS];
 
@@ -193,16 +206,27 @@ const char* PortHazeCurveName(int curve)
     }
 }
 
-void PortHazeSelectStadium(const char* baseName)
+static const HazeDefault* find_default(const char* baseName)
+{
+    size_t i;
+    if (baseName == NULL)
+        return NULL;
+    for (i = 0; i < sizeof kDefaults / sizeof kDefaults[0]; i++)
+    {
+        if (strcmp(baseName, kDefaults[i].name) == 0)
+            return &kDefaults[i];
+    }
+    return NULL;
+}
+
+static void select_haze(const char* baseName)
 {
     const HazeDefault* d = NULL;
     int lvl;
-    size_t i;
     int r, g, b;
     const char* color;
 
     memset(&s_haze, 0, sizeof s_haze);
-    read_ini();
     lvl = level();
     if (lvl == 0 || baseName == NULL)
     {
@@ -210,14 +234,7 @@ void PortHazeSelectStadium(const char* baseName)
         return;
     }
 
-    for (i = 0; i < sizeof kDefaults / sizeof kDefaults[0]; i++)
-    {
-        if (strcmp(baseName, kDefaults[i].name) == 0)
-        {
-            d = &kDefaults[i];
-            break;
-        }
-    }
+    d = find_default(baseName);
     if (d == NULL)
     {
         fprintf(stderr, "[port] haze: no entry for stadium %s\n", baseName);
@@ -278,6 +295,15 @@ void PortHazeSelectStadium(const char* baseName)
             (double)s_haze.start, (double)s_haze.end, s_haze.sky ? ", sky too" : "");
 }
 
+static void select_postfx(const char* baseName);
+
+void PortHazeSelectStadium(const char* baseName)
+{
+    read_ini();
+    select_haze(baseName);
+    select_postfx(baseName);
+}
+
 PortHaze* PortHazeState(void)
 {
     return &s_haze;
@@ -299,3 +325,75 @@ int PortHazePlanes(const float m[4][4], float* nearPlane, float* farPlane)
     *farPlane = f;
     return 1;
 }
+
+// Starting points to tune by eye. Subtle should read as a better picture rather than an effect;
+// strong is for when the effect is the point. The grade lifts toward the stadium's haze colour so
+// the near field shares the far stands' air, and the contrast and saturation win back what the lift
+// takes.
+typedef struct PostFxLevel
+{
+    float lift, saturation, contrast, grain, vignette;
+} PostFxLevel;
+static const PostFxLevel kPostFxSubtle = { 0.04f, 0.10f, 1.05f, 0.05f, 0.12f };
+static const PostFxLevel kPostFxStrong = { 0.07f, 0.18f, 1.10f, 0.09f, 0.22f };
+
+static void read_clamped(const char* name, float lo, float hi, float* out)
+{
+    const char* v = setting(name);
+    char* end;
+    float f;
+    if (v == NULL)
+        return;
+    f = strtof(v, &end);
+    if (end == v)
+    {
+        fprintf(stderr, "[port] film look: %s = %s is not a number\n", name, v);
+        return;
+    }
+    *out = f < lo ? lo : f > hi ? hi : f;
+}
+
+static void select_postfx(const char* baseName)
+{
+    const char* v = setting("film_look");
+    const HazeDefault* d = find_default(baseName);
+    const PostFxLevel* l;
+    const int generation = s_postfx.generation + 1;
+
+    memset(&s_postfx, 0, sizeof s_postfx);
+    s_postfx.generation = generation;
+    if (v == NULL || strcmp(v, "0") == 0 || strcmp(v, "off") == 0 || d == NULL)
+        return;
+    l = (strcmp(v, "2") == 0 || strcmp(v, "strong") == 0) ? &kPostFxStrong : &kPostFxSubtle;
+
+    s_postfx.active = 1;
+    // The haze's colour when the haze is on, overrides included, so the two agree; the stadium's
+    // default otherwise. Never the diagnostic magenta.
+    if (s_haze.active && !s_haze.diagnostic)
+        memcpy(s_postfx.liftColor, s_haze.color, sizeof s_postfx.liftColor);
+    else
+    {
+        s_postfx.liftColor[0] = d->r / 255.0f;
+        s_postfx.liftColor[1] = d->g / 255.0f;
+        s_postfx.liftColor[2] = d->b / 255.0f;
+    }
+    s_postfx.lift = l->lift;
+    s_postfx.saturation = l->saturation;
+    s_postfx.contrast = l->contrast;
+    s_postfx.grain = l->grain;
+    s_postfx.vignette = l->vignette;
+    read_clamped("grade_lift", 0.0f, 0.5f, &s_postfx.lift);
+    read_clamped("grade_saturation", -1.0f, 1.0f, &s_postfx.saturation);
+    read_clamped("grade_contrast", 0.5f, 2.0f, &s_postfx.contrast);
+    read_clamped("film_grain", 0.0f, 0.5f, &s_postfx.grain);
+    read_clamped("vignette", 0.0f, 0.8f, &s_postfx.vignette);
+    fprintf(stderr,
+            "[port] film look: %s, lift %.2f toward %d,%d,%d, saturation %+.2f, contrast %.2f, "
+            "grain %.2f, vignette %.2f\n",
+            baseName, (double)s_postfx.lift, (int)(s_postfx.liftColor[0] * 255.0f + 0.5f),
+            (int)(s_postfx.liftColor[1] * 255.0f + 0.5f),
+            (int)(s_postfx.liftColor[2] * 255.0f + 0.5f), (double)s_postfx.saturation,
+            (double)s_postfx.contrast, (double)s_postfx.grain, (double)s_postfx.vignette);
+}
+
+PortPostFx* PortPostFxState(void) { return &s_postfx; }
