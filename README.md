@@ -6,21 +6,21 @@ You need game data from your own copy of *Super Mario Strikers*. No game assets 
 
 [![Download the latest APK](https://img.shields.io/badge/Download-latest_APK-1A8FDC?style=for-the-badge)](https://github.com/keewhi/strikers-droid/releases/latest)
 
-<p align="center">
-  <img src="docs/images/touch-editor.jpg" alt="The touch control editor: slanted L and R shoulder buttons, an octagonal stick, A, B, X and Y face buttons, and a toolbar for the selected Z button with size, rotate, hide and reset" width="66%">
-  <img src="docs/images/launcher.jpg" alt="The launcher: the app icon, a Play button, the selected disc, and Disc Image and Settings buttons" width="32%">
-</p>
-
 ## Where it's at (November 2026)
 
 The whole game is playable on ARM64 devices running Android 9 or newer with Vulkan. It tracks upstream's game version, currently 2.0.0.
 
 - **Touch controls built for Strikers.** Buttons in the style of the game's menus, with captions that follow possession: A, B and Y read Pass, Shoot and Deke when your team has the ball, and Switch, Tackle and Hit when it doesn't. X uses an item, Z beside it cycles items, L aims and R is turbo. Move, resize, rotate or hide any control, and set the overlay's opacity, in the editor. The overlay steps aside when a controller connects.
+
+  <img src="docs/images/touch-editor.jpg" alt="The touch control editor: slanted L and R shoulder buttons, an octagonal stick, A, B, X and Y face buttons, and a toolbar for the selected Z button with size, rotate, hide and reset" width="720">
+
 - **Controllers and handhelds.** Gamepads and handhelds with built-in controls work out of the box, with remappable GameCube buttons, deadzones and rumble. Back opens a settings window over the paused match; Select is the Online button.
 - **Local multiplayer.** Up to four controllers, with player ports shown and swappable on Choose Sides.
 - **Online play.** Rollback matches over your network or the internet, using upstream's online code. Players need the same game version and a compatible disc region (US and European discs play together).
 - **Graphics.** Resolution, frame rate, anti-aliasing and performance presets; Dolphin-format texture packs; custom Vulkan drivers on supported devices; and an optional stadium haze that makes the far stands recede.
 - **A simple launcher.** Pick your disc once, then press Play, or let the app open straight into the game.
+
+  <img src="docs/images/launcher.jpg" alt="The launcher: the app icon, a Play button, the disc status, and Disc Image and Settings buttons" width="480">
 
 Not on Android: Discord Rich Presence and invites (they need the desktop Discord client) and the desktop settings app (Android has its own settings).
 
