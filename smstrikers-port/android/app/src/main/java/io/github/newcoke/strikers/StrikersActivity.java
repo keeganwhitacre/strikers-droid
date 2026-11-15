@@ -112,7 +112,7 @@ public class StrikersActivity extends SDLActivity {
 
     private void openSettings() {
         if (overlay != null) overlay.releaseAll();
-        startActivity(new Intent(this, SettingsActivity.class));
+        startActivity(new Intent(this, SettingsPopupActivity.class));
     }
 
     @Override
@@ -121,6 +121,15 @@ public class StrikersActivity extends SDLActivity {
         if (overlay != null && event.isFromSource(InputDevice.SOURCE_GAMEPAD)
                 && (event.getKeyCode() == KeyEvent.KEYCODE_BUTTON_MODE
                     || (settingsShortcut != 0 && event.getKeyCode() == settingsShortcut))) {
+            if (event.getAction() == KeyEvent.ACTION_UP && !event.isCanceled()) openSettings();
+            return true;
+        }
+        // Back opens Settings, as Back does in other apps, whatever device sends it: gesture and
+        // navigation-bar Back, and the dedicated Back key of handhelds, whose built-in controller
+        // reports it as a gamepad key. Left to SDL, a gamepad's Back keycode becomes the pad's
+        // Back button and opens the online panel. A controller's Select sends BUTTON_SELECT instead,
+        // so it still reaches the game as the Online button.
+        if (overlay != null && event.getKeyCode() == KeyEvent.KEYCODE_BACK) {
             if (event.getAction() == KeyEvent.ACTION_UP && !event.isCanceled()) openSettings();
             return true;
         }

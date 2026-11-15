@@ -54,6 +54,8 @@
     <string name="unlock_all_help">Все стадионы, команды и кубки.</string>
     <string name="hud">Панель производительности</string>
     <string name="hud_help">FPS, время кадра, GPU, ОЗУ и температура — вверху экрана.</string>
+    <string name="auto_launch">Сразу запускать игру</string>
+    <string name="auto_launch_help">Значок приложения сразу запускает игру. «Назад» во время игры открывает настройки.</string>
     <string name="game_note">«Открыть всё» игра читает при запуске. Панель включается сразу.</string>
 
     <string name="driver_system">Системный</string>

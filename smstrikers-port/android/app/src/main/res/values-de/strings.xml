@@ -54,6 +54,8 @@
     <string name="unlock_all_help">Alle Stadien, Teams und Pokale.</string>
     <string name="hud">Leistungsanzeige</string>
     <string name="hud_help">FPS, Bildkosten, GPU, RAM und Temperatur, oben am Bildschirm.</string>
+    <string name="auto_launch">Direkt ins Spiel starten</string>
+    <string name="auto_launch_help">Das App-Symbol startet sofort das Spiel. Zurück öffnet im Spiel die Einstellungen.</string>
     <string name="game_note">Alles freischalten liest das Spiel beim Start. Die Anzeige gilt sofort.</string>
 
     <string name="driver_system">Der des Systems</string>

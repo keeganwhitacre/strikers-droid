@@ -5,4 +5,14 @@
     <color name="ink">#FFF2F5F0</color>
     <color name="ink_dim">#FFA8BDAE</color>
     <color name="accent">#FFE8B31C</color>
+
+    <!-- The launcher's Material 3 colour roles. Android 12 and later take them from the system's
+         dynamic palette (values-v31); before that they are a palette built on the pitch green. -->
+    <color name="launcher_surface">#FFF6FBF4</color>
+    <color name="launcher_on_surface">#FF181D18</color>
+    <color name="launcher_on_surface_variant">#FF414941</color>
+    <color name="launcher_primary">#FF1D6B38</color>
+    <color name="launcher_on_primary">#FFFFFFFF</color>
+    <color name="launcher_secondary_container">#FFD2E8D3</color>
+    <color name="launcher_on_secondary_container">#FF0E3B1E</color>
 </resources>
