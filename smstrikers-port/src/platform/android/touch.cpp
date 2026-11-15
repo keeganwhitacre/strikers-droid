@@ -158,6 +158,22 @@ void publish_bindings()
         s_bindings[i] = found ? bindings[i] : -1;
 }
 
+// The buttons the virtual gamepad has. SDL numbers a masked virtual joystick's buttons
+// consecutively in mask order, not by SDL_GamepadButton, so with GUIDE left out every button
+// after BACK sits one lower than its enum: virtual_button() converts.
+constexpr Uint32 kButtonMask = (1u << SDL_GAMEPAD_BUTTON_SOUTH) | (1u << SDL_GAMEPAD_BUTTON_EAST) |
+                               (1u << SDL_GAMEPAD_BUTTON_WEST) | (1u << SDL_GAMEPAD_BUTTON_NORTH) |
+                               (1u << SDL_GAMEPAD_BUTTON_START) | (1u << SDL_GAMEPAD_BUTTON_LEFT_SHOULDER) |
+                               (1u << SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER) | (1u << SDL_GAMEPAD_BUTTON_BACK) |
+                               (1u << SDL_GAMEPAD_BUTTON_LEFT_STICK) | (1u << SDL_GAMEPAD_BUTTON_RIGHT_STICK) |
+                               (1u << SDL_GAMEPAD_BUTTON_DPAD_UP) | (1u << SDL_GAMEPAD_BUTTON_DPAD_DOWN) |
+                               (1u << SDL_GAMEPAD_BUTTON_DPAD_LEFT) | (1u << SDL_GAMEPAD_BUTTON_DPAD_RIGHT);
+
+int virtual_button(SDL_GamepadButton button)
+{
+    return __builtin_popcount(kButtonMask & ((1u << button) - 1u));
+}
+
 void attach()
 {
     if (s_virtual != nullptr || s_disabled)
@@ -172,16 +188,7 @@ void attach()
     // The mask says which of those SDL should believe in. Without it SDL
     // advertises a full controller and the button prompts offer the player
     // inputs the overlay does not draw.
-    desc.button_mask = (1u << SDL_GAMEPAD_BUTTON_SOUTH) | (1u << SDL_GAMEPAD_BUTTON_EAST) |
-                       (1u << SDL_GAMEPAD_BUTTON_WEST) | (1u << SDL_GAMEPAD_BUTTON_NORTH) |
-                       (1u << SDL_GAMEPAD_BUTTON_START) |
-                       (1u << SDL_GAMEPAD_BUTTON_LEFT_SHOULDER) |
-                       (1u << SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER) |
-                       (1u << SDL_GAMEPAD_BUTTON_BACK) |
-                       (1u << SDL_GAMEPAD_BUTTON_LEFT_STICK) |
-                       (1u << SDL_GAMEPAD_BUTTON_RIGHT_STICK) |
-                       (1u << SDL_GAMEPAD_BUTTON_DPAD_UP) | (1u << SDL_GAMEPAD_BUTTON_DPAD_DOWN) |
-                       (1u << SDL_GAMEPAD_BUTTON_DPAD_LEFT) | (1u << SDL_GAMEPAD_BUTTON_DPAD_RIGHT);
+    desc.button_mask = kButtonMask;
     desc.axis_mask = (1u << SDL_GAMEPAD_AXIS_LEFTX) | (1u << SDL_GAMEPAD_AXIS_LEFTY) |
                      (1u << SDL_GAMEPAD_AXIS_RIGHTX) | (1u << SDL_GAMEPAD_AXIS_RIGHTY) |
                      (1u << SDL_GAMEPAD_AXIS_LEFT_TRIGGER) |
@@ -241,32 +248,35 @@ void push_state()
 
     const int b = s_buttons.load(std::memory_order_relaxed);
 
-    SDL_SetJoystickVirtualButton(s_virtual, SDL_GAMEPAD_BUTTON_SOUTH, (b & TOUCH_A) != 0);
-    SDL_SetJoystickVirtualButton(s_virtual, SDL_GAMEPAD_BUTTON_EAST, (b & TOUCH_B) != 0);
-    SDL_SetJoystickVirtualButton(s_virtual, SDL_GAMEPAD_BUTTON_WEST, (b & TOUCH_X) != 0);
-    SDL_SetJoystickVirtualButton(s_virtual, SDL_GAMEPAD_BUTTON_NORTH, (b & TOUCH_Y) != 0);
-    SDL_SetJoystickVirtualButton(s_virtual, SDL_GAMEPAD_BUTTON_START, (b & TOUCH_START) != 0);
-    SDL_SetJoystickVirtualButton(s_virtual, SDL_GAMEPAD_BUTTON_LEFT_SHOULDER, (b & TOUCH_LB) != 0);
-    SDL_SetJoystickVirtualButton(s_virtual, SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER, (b & TOUCH_Z) != 0);
-    SDL_SetJoystickVirtualButton(s_virtual, SDL_GAMEPAD_BUTTON_BACK, (b & TOUCH_BACK) != 0);
-    SDL_SetJoystickVirtualButton(s_virtual, SDL_GAMEPAD_BUTTON_LEFT_STICK, (b & TOUCH_L3) != 0);
-    SDL_SetJoystickVirtualButton(s_virtual, SDL_GAMEPAD_BUTTON_RIGHT_STICK, (b & TOUCH_R3) != 0);
-    SDL_SetJoystickVirtualButton(s_virtual, SDL_GAMEPAD_BUTTON_DPAD_UP, (b & TOUCH_UP) != 0);
-    SDL_SetJoystickVirtualButton(s_virtual, SDL_GAMEPAD_BUTTON_DPAD_DOWN, (b & TOUCH_DOWN) != 0);
-    SDL_SetJoystickVirtualButton(s_virtual, SDL_GAMEPAD_BUTTON_DPAD_LEFT, (b & TOUCH_LEFT) != 0);
-    SDL_SetJoystickVirtualButton(s_virtual, SDL_GAMEPAD_BUTTON_DPAD_RIGHT, (b & TOUCH_RIGHT) != 0);
+    SDL_SetJoystickVirtualButton(s_virtual, virtual_button(SDL_GAMEPAD_BUTTON_SOUTH), (b & TOUCH_A) != 0);
+    SDL_SetJoystickVirtualButton(s_virtual, virtual_button(SDL_GAMEPAD_BUTTON_EAST), (b & TOUCH_B) != 0);
+    SDL_SetJoystickVirtualButton(s_virtual, virtual_button(SDL_GAMEPAD_BUTTON_WEST), (b & TOUCH_X) != 0);
+    SDL_SetJoystickVirtualButton(s_virtual, virtual_button(SDL_GAMEPAD_BUTTON_NORTH), (b & TOUCH_Y) != 0);
+    SDL_SetJoystickVirtualButton(s_virtual, virtual_button(SDL_GAMEPAD_BUTTON_START), (b & TOUCH_START) != 0);
+    SDL_SetJoystickVirtualButton(s_virtual, virtual_button(SDL_GAMEPAD_BUTTON_LEFT_SHOULDER), (b & TOUCH_LB) != 0);
+    SDL_SetJoystickVirtualButton(s_virtual, virtual_button(SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER), (b & TOUCH_Z) != 0);
+    SDL_SetJoystickVirtualButton(s_virtual, virtual_button(SDL_GAMEPAD_BUTTON_BACK), (b & TOUCH_BACK) != 0);
+    SDL_SetJoystickVirtualButton(s_virtual, virtual_button(SDL_GAMEPAD_BUTTON_LEFT_STICK), (b & TOUCH_L3) != 0);
+    SDL_SetJoystickVirtualButton(s_virtual, virtual_button(SDL_GAMEPAD_BUTTON_RIGHT_STICK), (b & TOUCH_R3) != 0);
+    SDL_SetJoystickVirtualButton(s_virtual, virtual_button(SDL_GAMEPAD_BUTTON_DPAD_UP), (b & TOUCH_UP) != 0);
+    SDL_SetJoystickVirtualButton(s_virtual, virtual_button(SDL_GAMEPAD_BUTTON_DPAD_DOWN), (b & TOUCH_DOWN) != 0);
+    SDL_SetJoystickVirtualButton(s_virtual, virtual_button(SDL_GAMEPAD_BUTTON_DPAD_LEFT), (b & TOUCH_LEFT) != 0);
+    SDL_SetJoystickVirtualButton(s_virtual, virtual_button(SDL_GAMEPAD_BUTTON_DPAD_RIGHT), (b & TOUCH_RIGHT) != 0);
 
     // L and R are axes, not buttons: Aurora's standard mapping leaves their
     // button entries invalid and reads the triggers, because on a GameCube pad
-    // they are analog and the game asks how far. Released is 0 and not
-    // SDL_JOYSTICK_AXIS_MIN -- a gamepad trigger axis runs 0..32767, unlike
-    // every other axis, and -32768 there reads as a trigger held down.
+    // they are analog and the game asks how far. This sets the joystick's raw
+    // axis, which runs the full -32768..32767; SDL's gamepad layer maps that
+    // onto the trigger's 0..32767, so released is SDL_JOYSTICK_AXIS_MIN. A raw
+    // 0 reads as half pressed: Aim held all the time and Turbo half on.
+    // (All six axes are in the mask, so their indices need no conversion.)
     const int l = s_triggerL.load(std::memory_order_relaxed);
     const int r = s_triggerR.load(std::memory_order_relaxed);
+    constexpr int kRange = SDL_JOYSTICK_AXIS_MAX - SDL_JOYSTICK_AXIS_MIN;
     SDL_SetJoystickVirtualAxis(s_virtual, SDL_GAMEPAD_AXIS_LEFT_TRIGGER,
-                               (Sint16)(l * SDL_JOYSTICK_AXIS_MAX / 255));
+                               (Sint16)(SDL_JOYSTICK_AXIS_MIN + l * kRange / 255));
     SDL_SetJoystickVirtualAxis(s_virtual, SDL_GAMEPAD_AXIS_RIGHT_TRIGGER,
-                               (Sint16)(r * SDL_JOYSTICK_AXIS_MAX / 255));
+                               (Sint16)(SDL_JOYSTICK_AXIS_MIN + r * kRange / 255));
 
     SDL_SetJoystickVirtualAxis(s_virtual, SDL_GAMEPAD_AXIS_LEFTX,
                                (Sint16)s_stickX.load(std::memory_order_relaxed));

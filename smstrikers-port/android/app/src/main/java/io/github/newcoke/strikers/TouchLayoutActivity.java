@@ -90,6 +90,29 @@ public class TouchLayoutActivity extends Activity implements OverlayView.EditLis
         bar.addView(label(getString(R.string.touch_edit_title), heavy, 28, Color.WHITE));
         bar.addView(new View(this), new LinearLayout.LayoutParams(0, 1, 1f));
 
+        // Opacity for the whole overlay, here so its effect is visible while setting it.
+        final GamePreferences prefs = new GamePreferences(this);
+        TextView opacityLabel = rowLabel(R.string.opacity);
+        opacityLabel.setMinWidth(0);
+        bar.addView(opacityLabel);
+        SeekBar opacity = new SeekBar(this);
+        opacity.setMax(75);  // 25% to 100%, as in Settings
+        opacity.setProgress(Math.max(0, Math.min(75, prefs.getInt(GamePreferences.TOUCH_OPACITY) - 25)));
+        opacity.setProgressTintList(ColorStateList.valueOf(CYAN));
+        opacity.setThumbTintList(ColorStateList.valueOf(Color.WHITE));
+        opacity.setProgressBackgroundTintList(ColorStateList.valueOf(0xFF2A4A80));
+        opacity.setContentDescription(getString(R.string.opacity));
+        opacity.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override public void onProgressChanged(SeekBar bar, int progress, boolean fromUser) {
+                if (!fromUser) return;
+                prefs.setInt(GamePreferences.TOUCH_OPACITY, progress + 25);
+                overlay.setOpacity((progress + 25) / 100f);
+            }
+            @Override public void onStartTrackingTouch(SeekBar bar) {}
+            @Override public void onStopTrackingTouch(SeekBar bar) {}
+        });
+        bar.addView(opacity, new LinearLayout.LayoutParams(dp(150), -2));
+
         hiddenButton = pill("", false);
         hiddenButton.setOnClickListener(v -> {
             tray.setVisibility(tray.getVisibility() == View.VISIBLE ? View.GONE : View.VISIBLE);
