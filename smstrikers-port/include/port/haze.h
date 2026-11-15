@@ -34,8 +34,31 @@ typedef struct PortHaze
     int logged;      // The renderer has reported its first hazed view this match.
 } PortHaze;
 
-// Called as each stadium is built, with the lower-case base name (wario_stadium, ...).
+// Optional film look for matches: a colour grade, film grain and a vignette, applied to the
+// finished 3D picture before the HUD is drawn (src/platform/postfx.cpp). Rendering only, like the
+// haze.
+typedef struct PortPostFx
+{
+    int active;           // For this match.
+    float liftColor[3];   // 0..1: the stadium's haze colour, which the darks are lifted toward.
+    float lift;           // 0..0.5: how far every colour moves toward liftColor.
+    float saturation;     // -1..1: added saturation; negative takes it away.
+    float contrast;       // 0.5..2, around mid grey.
+    float grain;          // 0..0.5: grain amplitude, peak to peak.
+    float vignette;       // 0..0.8: how much the corners darken.
+    int generation;       // Bumped when a value changes, so the pass rebuilds its textures.
+} PortPostFx;
+
+// Called as each stadium is built, with the lower-case base name (wario_stadium, ...). Selects the
+// film look too.
 void PortHazeSelectStadium(const char* baseName);
+
+// The current film look, live. The debug overlay edits it in place and bumps generation.
+PortPostFx* PortPostFxState(void);
+
+// Draws the film look over the frame so far, if it is active. glx_SendViews calls it once a frame,
+// after the 3D views and before the game's screen effects and HUD.
+void PortPostFxApply(void);
 
 // The current haze, live. The debug overlay edits it in place.
 PortHaze* PortHazeState(void);

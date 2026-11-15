@@ -361,6 +361,13 @@ static void glx_SendViews()
 
     for (view = 0; view < 0x22; view++)
     {
+        // PORT: the optional film look, over the finished 3D picture and under the game's screen
+        // effects and HUD.
+        if (view == GLV_ScreenBlur && !glx_GetSharedLock())
+        {
+            PortPostFxApply();
+        }
+
         if (!glViewGetEnable((eGLView)view))
         {
             continue;
@@ -946,8 +953,10 @@ void glx_SetFog(int type)
     if (type < 0)
     {
         glx_bFog = false;
-        // PORT: leaving the match ends the haze too, so the front end draws without it.
+        // PORT: leaving the match ends the haze and the film look too, so the front end draws
+        // without them.
         PortHazeState()->active = 0;
+        PortPostFxState()->active = 0;
         glx_HazeFog.set = false;
         return;
     }

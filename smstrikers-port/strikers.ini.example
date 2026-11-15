@@ -34,6 +34,17 @@
 # haze_curve = exp
 # haze_sky = 0
 
+# A film look for matches: a colour grade, fine moving grain and a vignette over the 3D picture,
+# under the HUD. off, subtle or strong; off by default. Rendering only, like the haze. The grade
+# lifts the darks toward the stadium's haze colour. The overrides below are subtle's values; the
+# debug menu's Render tab edits them live.
+# film_look = off
+# grade_lift = 0.04
+# grade_saturation = 0.10
+# grade_contrast = 1.05
+# film_grain = 0.05
+# vignette = 0.12
+
 # Frame rate cap in Hz, or 0 for unlimited.
 # fps_limit = 59.94
 

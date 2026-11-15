@@ -125,6 +125,14 @@ match there, and open the **Render** tab's **stadium haze** section. **Copy for 
 writes the values to the clipboard and to `strikers-log.txt`. The `haze_*` keys are listed in
 `strikers.ini.example`.
 
+## Film look
+
+**Settings → Video → Film look** adds a colour grade, fine moving film grain and a light vignette over
+the 3D picture during matches, under the HUD. The grade lifts the darks toward the stadium's haze
+colour, so the pitch shares the air of the hazed stands. It applies from the next match and does not
+affect online play. The **Render** tab of the debug menu (`overlay = menu`) tunes it live; the
+`film_look`, `grade_*`, `film_grain` and `vignette` keys are listed in `strikers.ini.example`.
+
 ## Texture packs
 
 Open **Settings → Video → Texture packs** and import a Dolphin-format ZIP with PNG or DDS

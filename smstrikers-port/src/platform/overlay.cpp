@@ -1340,6 +1340,53 @@ void draw_render_tab()
         ImGui::EndDisabled();
     }
 
+    ImGui::SeparatorText("film look");
+    {
+        PortPostFx* fx = PortPostFxState();
+        bool on = fx->active != 0;
+        bool changed = false;
+        if (ImGui::Checkbox("film look", &on))
+        {
+            // Turned on by hand when the setting left it off: start from the subtle level.
+            if (on && fx->contrast == 0.0f)
+            {
+                fx->liftColor[0] = fx->liftColor[1] = fx->liftColor[2] = 0.5f;
+                fx->lift = 0.04f;
+                fx->saturation = 0.10f;
+                fx->contrast = 1.05f;
+                fx->grain = 0.05f;
+                fx->vignette = 0.12f;
+            }
+            fx->active = on ? 1 : 0;
+            changed = true;
+        }
+        help("Grade, grain and vignette over the 3D picture, under the HUD. Lasts until the match "
+             "ends; film_look in strikers.ini turns it on for every match.");
+        ImGui::BeginDisabled(!on);
+        changed |= ImGui::ColorEdit3("lift colour", fx->liftColor);
+        changed |= ImGui::SliderFloat("lift", &fx->lift, 0.0f, 0.5f, "%.2f");
+        changed |= ImGui::SliderFloat("saturation", &fx->saturation, -1.0f, 1.0f, "%+.2f");
+        changed |= ImGui::SliderFloat("contrast", &fx->contrast, 0.5f, 2.0f, "%.2f");
+        changed |= ImGui::SliderFloat("grain", &fx->grain, 0.0f, 0.5f, "%.2f");
+        changed |= ImGui::SliderFloat("vignette", &fx->vignette, 0.0f, 0.8f, "%.2f");
+        if (changed)
+            fx->generation++;   // the pass rebuilds the textures that carry these
+        char lines[192];
+        std::snprintf(lines, sizeof lines,
+                      "grade_lift = %.2f\ngrade_saturation = %.2f\ngrade_contrast = %.2f\n"
+                      "film_grain = %.2f\nvignette = %.2f\n",
+                      (double)fx->lift, (double)fx->saturation, (double)fx->contrast,
+                      (double)fx->grain, (double)fx->vignette);
+        ImGui::TextUnformatted(lines);
+        if (ImGui::Button("copy film look for strikers.ini"))
+        {
+            ImGui::SetClipboardText(lines);
+            std::fprintf(stderr, "[port] film look for %s:\n%s", s_stadium, lines);
+        }
+        help("The lift colour follows the haze colour; set that with haze_color.");
+        ImGui::EndDisabled();
+    }
+
     ImGui::SeparatorText("lighting and texture stages");
     ImGui::Checkbox("lighting", &g_bAllowLighting);
     ImGui::SameLine();
