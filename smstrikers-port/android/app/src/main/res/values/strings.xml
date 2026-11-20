@@ -19,7 +19,9 @@
 
     <string name="settings">Settings</string>
     <string name="video_driver">Video driver</string>
-    <string name="language">Language</string>
+    <string name="language">App language</string>
+    <string name="game_language">Game language</string>
+    <string name="game_language_disc">Disc default</string>
     <string name="language_system">Follow the system</string>
 
     <!-- Settings -->

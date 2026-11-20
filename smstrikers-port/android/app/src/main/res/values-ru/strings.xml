@@ -10,7 +10,9 @@
 
     <string name="settings">Настройки</string>
     <string name="video_driver">Видеодрайвер</string>
-    <string name="language">Язык</string>
+    <string name="language">Язык приложения</string>
+    <string name="game_language">Язык игры</string>
+    <string name="game_language_disc">Как на диске</string>
     <string name="language_system">Как в системе</string>
 
     <string name="done">Готово</string>
