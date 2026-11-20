@@ -6,6 +6,8 @@ You need game data from your own copy of *Super Mario Strikers*. No game assets 
 
 [![Download the latest APK](https://img.shields.io/badge/Download-latest_APK-1A8FDC?style=for-the-badge)](https://github.com/keewhi/strikers-droid/releases/latest)
 
+[![Total downloads](https://img.shields.io/github/downloads/keewhi/strikers-droid/total?style=for-the-badge&label=Downloads&color=2E7D32)](https://github.com/keewhi/strikers-droid/releases)
+
 ## Where it's at (November 2026)
 
 The whole game is playable on ARM64 devices running Android 9 or newer with Vulkan. It tracks upstream's game version, currently 2.0.0.
