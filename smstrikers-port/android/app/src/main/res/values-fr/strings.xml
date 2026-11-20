@@ -10,7 +10,9 @@
 
     <string name="settings">Réglages</string>
     <string name="video_driver">Pilote vidéo</string>
-    <string name="language">Langue</string>
+    <string name="language">Langue de l\'appli</string>
+    <string name="game_language">Langue du jeu</string>
+    <string name="game_language_disc">Celle du disque</string>
     <string name="language_system">Suivre le système</string>
 
     <string name="done">Terminé</string>

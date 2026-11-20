@@ -66,6 +66,11 @@ The Android launcher provides video, control and game settings. It writes the co
 for the native configuration keys. The frame limit follows the display by default and can be capped
 from Settings.
 
+**Settings → Game → Game language** picks the language of the game itself on a European disc
+(English, German, French, Spanish or Italian) and takes effect the next time the game opens. It
+writes `language` to `strikers.ini`; the American disc is English only and ignores it. **App
+language** changes only the launcher and settings.
+
 The on-screen pad and USB or Bluetooth controllers use the same SDL gamepad path. The on-screen pad
 hides when a physical controller connects.
 

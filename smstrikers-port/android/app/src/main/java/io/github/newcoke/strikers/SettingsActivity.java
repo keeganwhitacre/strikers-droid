@@ -158,6 +158,19 @@ public class SettingsActivity extends NativeSettingsActivity {
         toggle(group, R.string.auto_launch, R.string.auto_launch_help, GamePreferences.AUTO_LAUNCH, false);
         toggle(group, R.string.update_check, R.string.update_check_help,
                 GamePreferences.UPDATE_CHECK, false);
+        // The game's own language, which the port reads from strikers.ini at startup. A European disc
+        // has all five; the American disc ignores the setting. Names are shown in their own language.
+        final String gameLanguage = GameConfig.readSetting(this, "language", "");
+        final ListPreference gameLanguages = list(group, getText(R.string.game_language),
+                new String[]{getString(R.string.game_language_disc), "English", "Deutsch", "Français", "Español", "Italiano"},
+                new String[]{"", "english", "german", "french", "spanish", "italian"}, gameLanguage);
+        if (gameLanguages.findIndexOfValue(gameLanguage) < 0) gameLanguages.setSummary(gameLanguage.replace("%", "%%"));
+        gameLanguages.setOnPreferenceChangeListener((item, value) -> {
+            if (!saveSetting("language", value.toString().isEmpty() ? null : value.toString())) return false;
+            gameLanguages.setSummary("%s");
+            toast(R.string.drivers_restart_note);
+            return true;
+        });
         ListPreference language = list(group, getText(R.string.language), AppLocale.displayNames(this), AppLocale.LANGUAGE_TAGS,
                 prefs.getString(GamePreferences.APP_LANGUAGE));
         language.setOnPreferenceChangeListener((item, value) -> {

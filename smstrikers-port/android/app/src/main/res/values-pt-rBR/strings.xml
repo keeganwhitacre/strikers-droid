@@ -10,7 +10,9 @@
 
     <string name="settings">Configurações</string>
     <string name="video_driver">Driver de vídeo</string>
-    <string name="language">Idioma</string>
+    <string name="language">Idioma do app</string>
+    <string name="game_language">Idioma do jogo</string>
+    <string name="game_language_disc">Padrão do disco</string>
     <string name="language_system">Seguir o sistema</string>
 
     <string name="done">Concluído</string>
